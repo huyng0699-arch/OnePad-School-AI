@@ -1,0 +1,5 @@
+﻿export default function ParentPrivacyPage() {
+  return <div className="shell"><main className="main"><section className="hero"><div className="hero-top"><div><div className="kicker">Privacy Center</div><h2>Privacy Center</h2><p>Control what parents, teachers, and school roles can access.</p></div></div></section>
+  <section className="section grid cols-2"><div className="card solid"><h3>Parent can see</h3><p>Learning summary, trend report, safe health/wellbeing vault, and consent history.</p></div><div className="card solid"><h3>Teacher can see with consent</h3><p>Learning-safe and wellbeing-safe summaries for support coordination.</p></div><div className="card solid"><h3>School admins can see</h3><p>Aggregate counts, policy, audit logs, and trend oversight.</p></div><div className="card solid"><h3>Still restricted</h3><p>Raw private reflections and raw chat content stay hidden.</p></div></section>
+  <section className="section card solid"><h3>Manage Consent</h3><div className="pill-row section"><a className="badge" href="/consent-sharing">Open consent sharing</a></div></section></main></div>;
+}

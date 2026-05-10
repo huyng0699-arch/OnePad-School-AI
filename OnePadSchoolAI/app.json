@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "OnePadSchoolAI",
+    "slug": "onepadschoolsai",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "orientation": "default",
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "OnePad uses the camera to place 3D learning models in augmented reality."
+      }
+    },
+    "web": {
+      "supportsFullscreen": true
+    },
+    "android": {
+      "package": "com.anonymous.onepadschoolsai",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "INTERNET"
+      ]
+    },
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#f4f7fb",
+      "translucent": false
+    },
+    "androidNavigationBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#ffffff"
+    }
+  }
+}

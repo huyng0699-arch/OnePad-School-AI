@@ -1,0 +1,9 @@
+.env
+.env.local
+.env.*.local
+node_modules/
+.expo/
+dist/
+build/
+android/.gradle/
+android/app/build/

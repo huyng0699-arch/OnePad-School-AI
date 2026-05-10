@@ -1,0 +1,85 @@
+Student Trend Algorithm (Nightly Backend)
+
+1. Source of truth
+- Canonical runtime backend is `backend/`.
+- Student App writes lightweight events during day.
+- Heavy trend processing runs nightly on backend.
+
+2. Nightly pipeline
+- Job: `backend/src/jobs/nightly-student-summary.job.ts`
+- Input window: 1/3/7/14 day slices from DB.
+- Data groups aggregated per student:
+  - physical
+  - wellbeing
+  - learning
+  - conversation
+  - teacher_parent
+- Output persisted:
+  - StudentTrendSnapshot
+  - StudentTrendReport
+  - StudentTrendChartPoint
+  - ParentTrendReportDto response material
+
+3. NegativePointSummary
+- Core structure includes:
+  - total deduction
+  - category deduction
+  - reasons
+  - evidence
+  - severity
+  - source
+  - trend direction
+- Categories:
+  - physical (sleep, fatigue, energy, movement, restingHeartRate, studyMinutes)
+  - wellbeing (mood/stress/social/support)
+  - learning (quiz trend, wrong attempts, AI help, confidence, frustration, drop-off)
+  - conversation (distress/help-seeking/withdrawal/emotional-load/safety-review)
+  - teacher_parent (teacher notes, parent notes, attendance, late, missing assignments)
+
+4. DTO for Parent App
+- `GET /v1/parent/children/:studentId/trend-report` returns ParentTrendReportDto:
+  - studentId, childName, latestPacketId, level, redAlert
+  - title, summary, keyFactors, suggestedActions
+  - chart[14 days]
+  - categoryBreakdown (5 groups)
+  - latestSummary
+  - generatedAt
+  - provider
+  - source
+
+5. Provider and source
+- provider:
+  - gemma_local_cactus
+  - backend_cloud
+  - template_fallback
+- source:
+  - live_backend
+  - local_cache
+  - demo_seed
+  - demo_encrypted
+
+6. Demo encrypted data path
+- Seed writes encrypted-looking payload into event metadata as `DEMOENC:<base64-json>`.
+- Backend decodes with `decodeDemoEncryptedSignalBundle`.
+- Decoded signals are mapped to structured safe trend items.
+- Parent UI shows source badge `DEMO ENCRYPTED DATA`.
+
+7. Endpoint map
+- Parent:
+  - GET /v1/parent/children/:studentId/trend-report
+  - GET /v1/parent/children/:studentId/trend-chart?days=14
+  - GET /v1/parent/children/:studentId/health-alerts
+  - GET /v1/parent/children/:studentId/report
+- Teacher:
+  - GET /v1/teacher/students/:studentId/trend-summary
+  - GET /v1/teacher/support-queue
+- Admin:
+  - GET /v1/admin/schools/:schoolId/trend-overview
+  - GET /v1/admin/students/:studentId/trend-detail
+  - POST /v1/admin/jobs/nightly-student-summary/run
+  - GET /v1/admin/audit-logs
+
+8. Audit and privacy
+- Parent trend report, teacher trend summary, and admin trend detail are audited.
+- Raw private reflection/chat is not exposed in parent/teacher/admin overview DTOs.
+- StudentTrendPacket keeps `rawPrivateTextIncluded=false`.

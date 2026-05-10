@@ -1,0 +1,36 @@
+Health and Wellbeing Algorithms
+
+1. Purpose
+- Build safe, non-diagnostic indicators for parent/teacher/admin support workflows.
+- Preserve privacy: no raw reflection/chat in parent-facing trend summaries.
+
+2. Inputs
+- PhoneHealthMetric: sleepMinutes, activeMinutes, restingHeartRate, steps.
+- ChildHealthAlert from health-monitoring service.
+- Wellbeing/support events from student events and support requests.
+
+3. Health decline evaluation
+- Compare recent vs baseline windows.
+- Trigger signals:
+  - step drop
+  - sleep drop
+  - resting HR increase
+  - activity drop
+- Create medium/high alert when threshold is exceeded.
+
+4. Trend integration
+- Nightly trend job maps health and wellbeing into physical + wellbeing deductions.
+- Support signals map into wellbeing and teacher_parent categories.
+- Conversation safety signals map into conversation category with locked raw text.
+
+5. Vault output
+- Parent vault endpoint returns safe readiness summary, support signals, alerts, generatedAt, source.
+- Parent UI displays source badge:
+  - LIVE BACKEND
+  - LOCAL CACHE
+  - DEMO DATA
+  - DEMO ENCRYPTED DATA
+
+6. Demo encrypted path
+- Seeded `DEMOENC` payload is decoded server-side only.
+- Parent UI receives only structured safe labels/summaries.

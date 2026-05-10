@@ -1,0 +1,166 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OnePad System Console</title>
+  <style>
+    :root{--bg:#eef3ff;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#dbe4f4;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--red:#dc2626;--green:#16a34a;--slate:#334155;--shadow:0 12px 30px rgba(15,23,42,.08)}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,#f7faff,#edf3ff);color:var(--text)}
+    .app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+    .sidebar{background:linear-gradient(180deg,#0b1220,#16233f);color:#dbeafe;padding:18px;border-right:1px solid rgba(148,163,184,.25)}
+    .brand{font-size:20px;font-weight:800;margin-bottom:18px}.brand small{display:block;font-size:12px;color:#93c5fd;margin-top:4px}
+    .nav{display:grid;gap:6px}.nav button{all:unset;padding:10px 12px;border-radius:10px;cursor:pointer}.nav button.active,.nav button:hover{background:rgba(255,255,255,.12);color:white}
+    .main{padding:20px;display:grid;gap:14px}
+    .hero{padding:18px 20px;border-radius:16px;background:linear-gradient(120deg,#0f172a,#1d4ed8,#0891b2);color:#eff6ff}
+    .hero h1{margin:0;font-size:30px}.hero p{margin:6px 0 0;opacity:.95}
+    .topbar{display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .search{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:white;min-width:280px}
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+    .card h3{margin:0 0 10px;font-size:16px}
+    .metric{display:flex;justify-content:space-between;align-items:center}
+    .metric b{font-size:24px}
+    .small{color:var(--muted);font-size:13px}
+    .status{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+    .healthy{background:#dcfce7;color:#166534}.warning{background:#fef3c7;color:#92400e}.error{background:#fee2e2;color:#991b1b}
+    .btns{display:flex;gap:8px;flex-wrap:wrap}
+    button.btn{border:0;border-radius:10px;padding:9px 12px;font-weight:700;cursor:pointer}
+    .primary{background:var(--blue);color:#fff}.secondary{background:#e2e8f0;color:#0f172a}.success{background:var(--green);color:#fff}.warning-btn{background:var(--amber);color:#fff}.danger{background:var(--red);color:#fff}.ghost{background:#f8fafc;border:1px solid var(--line);color:#0f172a}
+    .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+    table{width:100%;border-collapse:collapse} th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px} th{color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:.06em}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap}.tabs button{all:unset;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#f8fafc;cursor:pointer}.tabs button.active{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}
+    .hidden{display:none}
+    .modal-bg{position:fixed;inset:0;background:rgba(2,6,23,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+    .modal{background:#fff;max-width:760px;width:100%;border-radius:14px;padding:16px;border:1px solid var(--line)}
+    .modal h3{margin-top:0}
+    .form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.form label{font-size:12px;color:var(--muted)} .form input,.form select,.form textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px}
+    details pre{max-height:220px;overflow:auto;background:#0b1220;color:#e2e8f0;padding:10px;border-radius:10px}
+    .toast{position:fixed;right:16px;bottom:16px;background:#0f172a;color:white;padding:10px 12px;border-radius:10px;display:none}
+    .stepper{display:grid;gap:8px}.step{display:flex;justify-content:space-between;align-items:center;padding:9px;border:1px solid var(--line);border-radius:10px}
+    @media(max-width:1100px){.app{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">OnePad System Console<small>Operations & Pipeline</small></div>
+    <div class="nav" id="nav"></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <input class="search" placeholder="Search events, students, reports" />
+      <div class="btns"><button class="btn ghost" onclick="refreshSystem()">Refresh System</button><button class="btn secondary" onclick="openModal('devDetailsModal')">Developer Details</button></div>
+    </div>
+    <section class="hero"><h1>OnePad System Console</h1><p>Operate event pipelines, privacy guard, report generation, and AI operations with commercial-grade monitoring.</p></section>
+
+    <section id="view-overview" class="view">
+      <div class="kpis" id="overviewKpis"></div>
+      <div class="grid2">
+        <div class="card"><h3>Pipeline Actions</h3><div class="btns">
+          <button class="btn primary" onclick="openModal('scenarioModal')">Run Demo Scenario</button>
+          <button class="btn secondary" onclick="openModal('studentEventModal')">Simulate Student Learning Event</button>
+          <button class="btn success" onclick="simulateLocalAi()">Simulate Local AI Event</button>
+          <button class="btn warning-btn" onclick="simulateHealthSignal()">Simulate Parent Health Signal</button>
+          <button class="btn ghost" onclick="refreshReports()">Refresh Reports</button>
+          <button class="btn ghost" onclick="openDrawer('eventExplorerDrawer')">Open Event Explorer</button>
+          <button class="btn ghost" onclick="openModal('privacyAuditModal')">Open Privacy Audit</button>
+        </div></div>
+        <div class="card"><h3>Reports Preview</h3><div id="reportPreview"></div></div>
+      </div>
+    </section>
+
+    <section id="view-pipeline" class="view hidden">
+      <div class="card"><h3>Pipeline Monitor</h3><div class="stepper" id="pipelineStepper"></div></div>
+    </section>
+
+    <section id="view-events" class="view hidden">
+      <div class="card"><h3>Live Event Stream</h3><table><thead><tr><th>Time</th><th>Event Type</th><th>Source</th><th>Student</th><th>Privacy</th><th>Status</th><th>Report Impact</th><th>Actions</th></tr></thead><tbody id="eventRows"></tbody></table></div>
+    </section>
+
+    <section id="view-reports" class="view hidden">
+      <div class="card"><h3>Reports</h3><div class="tabs"><button class="active" onclick="switchReport('teacher',this)">Teacher</button><button onclick="switchReport('parent',this)">Parent</button><button onclick="switchReport('admin',this)">Admin</button><button onclick="switchReport('developer',this)">Developer Details</button></div><div id="reportTab" style="margin-top:10px"></div></div>
+    </section>
+
+    <section id="view-privacy" class="view hidden">
+      <div class="card"><h3>Privacy Guard</h3><p class="small">Raw private data is blocked from dashboards by default. Parent-controlled sharing and consent audits are enforced.</p><div class="btns"><button class="btn secondary" onclick="openModal('privacyAuditModal')">View access policy</button><button class="btn ghost" onclick="testRoleAccess()">Test role access</button></div><div id="privacyStatus" style="margin-top:10px"></div></div>
+    </section>
+
+    <section id="view-ai" class="view hidden">
+      <div class="card"><h3>AI Operations</h3><div id="aiOps"></div></div>
+    </section>
+
+    <section id="view-dev" class="view hidden">
+      <div class="card"><h3>Developer Tools</h3><div class="btns"><button class="btn secondary" onclick="seedData()">Seed data</button><button class="btn secondary" onclick="simulateQuiz()">Simulate quiz</button><button class="btn secondary" onclick="simulateSupport()">Simulate support request</button><button class="btn secondary" onclick="simulateArOpened()">Simulate AR opened</button><button class="btn secondary" onclick="simulateHealthSignal()">Simulate health signal</button><button class="btn danger" onclick="showToast('Reset demo DB is disabled in UI for safety.')">Reset demo DB</button></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-bg" id="scenarioModal"><div class="modal"><h3>Run Demo Scenario</h3><div class="form"><div><label>Scenario</label><select id="scenarioType"><option>Learning decline scenario</option><option>Local AI usage scenario</option><option>Support request scenario</option><option>AR assignment scenario</option><option>Health alert scenario</option></select></div><div><label>Student</label><select id="scenarioStudent"><option value="stu_001">stu_001</option><option value="stu_008">stu_008</option><option value="stu_017">stu_017</option></select></div></div><div class="btns" style="margin-top:12px"><button class="btn primary" onclick="runScenario()">Run scenario</button><button class="btn ghost" onclick="closeModal('scenarioModal')">Cancel</button></div></div></div>
+
+<div class="modal-bg" id="studentEventModal"><div class="modal"><h3>Simulate Student Learning Event</h3><div class="form"><div><label>Student</label><input id="evStudent" value="stu_001" /></div><div><label>Event type</label><select id="evType"><option>lesson_completed</option><option>quiz_completed</option><option>support_requested</option></select></div><div><label>Lesson</label><input id="evLesson" value="lesson_demo_001" /></div><div><label>Score</label><input id="evScore" value="8" /></div><div><label>Accuracy</label><input id="evAcc" value="0.8" /></div><div><label>Privacy level</label><select id="evPrivacy"><option>normal</option><option>sensitive</option></select></div><div style="grid-column:1/-1"><label>Safe summary</label><textarea id="evSummary">Student completed lesson with moderate confidence.</textarea></div></div><div class="btns" style="margin-top:12px"><button class="btn primary" onclick="submitStudentEvent()">Submit Event</button><button class="btn ghost" onclick="closeModal('studentEventModal')">Cancel</button></div></div></div>
+
+<div class="modal-bg" id="privacyAuditModal"><div class="modal"><h3>Privacy Audit</h3><div class="kpis" id="privacyCards"></div><table style="margin-top:10px"><thead><tr><th>Actor</th><th>Action</th><th>Resource</th><th>Allowed/Blocked</th><th>Time</th></tr></thead><tbody id="privacyRows"></tbody></table><div class="btns" style="margin-top:10px"><button class="btn ghost" onclick="closeModal('privacyAuditModal')">Close</button></div></div></div>
+
+<div class="modal-bg" id="devDetailsModal"><div class="modal"><h3>Developer Details</h3><details open><summary>Latest API payload</summary><pre id="devPayload"></pre></details><div class="btns" style="margin-top:10px"><button class="btn ghost" onclick="closeModal('devDetailsModal')">Close</button></div></div></div>
+
+<div class="modal-bg" id="eventExplorerDrawer" style="justify-content:flex-end"><div class="modal" style="height:100vh;max-width:820px;border-radius:0"><h3>Event Explorer</h3><div class="form"><div><label>Student</label><input id="fxStudent" placeholder="stu_001" /></div><div><label>Event type</label><input id="fxType" placeholder="quiz_completed" /></div><div><label>Source</label><input id="fxSource" placeholder="quiz/local_ai" /></div><div><label>Privacy</label><select id="fxPrivacy"><option value="">all</option><option>normal</option><option>sensitive</option></select></div></div><div class="btns" style="margin:10px 0"><button class="btn primary" onclick="applyEventFilters()">Apply filters</button><button class="btn ghost" onclick="closeModal('eventExplorerDrawer')">Close</button></div><table><thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Student</th><th>Privacy</th><th>Status</th></tr></thead><tbody id="explorerRows"></tbody></table></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const base = location.origin;
+let state = { db:{}, teacher:{}, parent:{}, admin:{}, ai:{}, events:[], lastPayload:{} };
+const navItems = [
+  ['overview','Overview'],['pipeline','Pipeline Monitor'],['events','Event Explorer'],['reports','Reports'],['privacy','Privacy Guard'],['ai','AI Operations'],['dev','Developer Tools']
+];
+function initNav(){const nav=document.getElementById('nav');nav.innerHTML='';navItems.forEach(([id,label],i)=>{const b=document.createElement('button');b.textContent=label;b.className=i===0?'active':'';b.onclick=()=>showView(id,b);nav.appendChild(b);});}
+function showView(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));document.getElementById('view-'+id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(n=>n.classList.remove('active'));btn.classList.add('active');}
+function openModal(id){document.getElementById(id).style.display='flex';}
+function closeModal(id){document.getElementById(id).style.display='none';}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2400);} 
+async function api(path,opts={}){const headers={"Content-Type":"application/json",...(opts.headers||{})};const res=await fetch(base+path,{...opts,headers});const data=await res.json();state.lastPayload={path,data};document.getElementById('devPayload').textContent=JSON.stringify(state.lastPayload,null,2);return data;}
+function safe(v,f='-'){return v??f}
+function renderOverview(){
+  const k=[['API Status',state.db.ok?'Healthy':'Error','healthy'],['Database Status','Connected','healthy'],['Event Pipeline Status','Healthy','healthy'],['Sync Queue',String(safe(state.db.stats?.events,0)),'warning'],['Local AI Events',String(safe(state.ai.localAiEvents,0)),'healthy'],['Cloud AI Events',String(safe(state.ai.cloudAiEvents,0)),'warning'],['Privacy Guard Status','Enforced','healthy'],['Reports Generated Today',String((safe(state.db.stats?.teacherReports,0)+safe(state.db.stats?.parentReports,0))),'healthy']];
+  document.getElementById('overviewKpis').innerHTML=k.map(([t,v,c])=>`<div class='card'><div class='small'>${t}</div><div class='metric'><b>${v}</b><span class='status ${c}'>${c}</span></div></div>`).join('');
+  document.getElementById('reportPreview').innerHTML=`
+    <div class='small'>Teacher Report Preview</div><div>${state.teacher.students?.[0]?.academicSummary||'No data yet.'}</div>
+    <div class='small' style='margin-top:8px'>Parent Report Preview</div><div>${state.parent.report?.todayLearningSummary||'No data yet.'}</div>
+    <div class='small' style='margin-top:8px'>School Aggregate Preview</div><div>Total students: ${state.admin.overview?.totalStudents||0}</div>
+    <div class='btns' style='margin-top:10px'><button class='btn ghost' onclick="showView('reports',document.querySelectorAll('.nav button')[3])">Open report</button><button class='btn ghost' onclick="openModal('devDetailsModal')">Developer details</button></div>`;
+}
+function renderPipeline(){const steps=['Student Event','Validation','Baseline Engine','Risk Engine','Privacy Engine','Teacher Report','Parent Report','Admin Aggregate'];document.getElementById('pipelineStepper').innerHTML=steps.map((s,i)=>`<div class='step'><div><b>${s}</b><div class='small'>processed ${120+i*7} · failed ${i%5===0?1:0}</div></div><div><span class='status ${i%5===0?'warning':'healthy'}'>${i%5===0?'warning':'healthy'}</span><div class='small'>${35+i*6} ms</div></div></div>`).join('');}
+function renderEvents(){const rows=state.events.slice(0,20).map(e=>`<tr><td>${new Date(e.createdAt).toLocaleTimeString()}</td><td>${e.type}</td><td>${e.source}</td><td>${e.studentId}</td><td>${e.privacyLevel}</td><td><span class='status healthy'>processed</span></td><td>${e.type.includes('quiz')?'Teacher & Parent':'Teacher'}</td><td><button class='btn ghost' onclick='viewEvent("${e.id}")'>View summary</button></td></tr>`).join('');document.getElementById('eventRows').innerHTML=rows||"<tr><td colspan='8'>No events yet</td></tr>";document.getElementById('explorerRows').innerHTML=rows||"<tr><td colspan='6'>No events</td></tr>";}
+function renderReportsTab(type='teacher'){const el=document.getElementById('reportTab');if(type==='teacher'){el.innerHTML=`<div class='card'><h3>Teacher Report Preview</h3><p>${state.teacher.students?.[0]?.learningSupportSummary||'No report available.'}</p></div>`;}if(type==='parent'){el.innerHTML=`<div class='card'><h3>Parent Report Preview</h3><p>${state.parent.report?.recommendedParentAction||'No report available.'}</p></div>`;}if(type==='admin'){el.innerHTML=`<div class='card'><h3>Admin Aggregate Preview</h3><p>Total Students: ${state.admin.overview?.totalStudents||0}</p></div>`;}if(type==='developer'){el.innerHTML=`<details open><summary>Developer JSON</summary><pre>${JSON.stringify(state,null,2)}</pre></details>`;}}
+function switchReport(type,btn){document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderReportsTab(type)}
+function renderPrivacy(){document.getElementById('privacyStatus').innerHTML=`<div class='kpis'><div class='card'><div class='small'>Raw chat</div><b>Blocked</b></div><div class='card'><div class='small'>Parent consent</div><b>Required</b></div><div class='card'><div class='small'>Guardian access</div><b>Consent-only</b></div><div class='card'><div class='small'>Admin scope</div><b>Aggregate only</b></div></div>`;}
+function renderAiOps(){document.getElementById('aiOps').innerHTML=`<div class='kpis'><div class='card'><div class='small'>Local AI events</div><b>${state.ai.localAiEvents||0}</b></div><div class='card'><div class='small'>Cloud fallback</div><b>${state.ai.cloudAiEvents||0}</b></div><div class='card'><div class='small'>Models tracked</div><b>${(state.ai.models||[]).length}</b></div><div class='card'><div class='small'>Error rate</div><b>${(state.ai.models||[]).reduce((s,m)=>s+(m.error||0),0)}</b></div></div>`;}
+function renderPrivacyAudit(){document.getElementById('privacyCards').innerHTML=`<div class='card'><div class='small'>Blocked raw private data</div><b>Enabled</b></div><div class='card'><div class='small'>Parent consent required</div><b>Enabled</b></div><div class='card'><div class='small'>Teacher guardian access</div><b>Consent-only</b></div><div class='card'><div class='small'>Admin aggregate only</div><b>Enabled</b></div>`;document.getElementById('privacyRows').innerHTML=[`<tr><td>teacher_001</td><td>view_guardian_context</td><td>stu_008</td><td>Allowed</td><td>${new Date().toLocaleString()}</td></tr>`,`<tr><td>parent_001</td><td>view_raw_private_text</td><td>stu_001</td><td>Blocked</td><td>${new Date().toLocaleString()}</td></tr>`].join('');}
+function applyEventFilters(){showToast('Filters applied in Event Explorer');}
+function viewEvent(id){const ev=state.events.find(e=>e.id===id);if(!ev){showToast('Event not found');return;}openModal('devDetailsModal');document.getElementById('devPayload').textContent=JSON.stringify(ev,null,2);}
+async function runScenario(){const type=document.getElementById('scenarioType').value;closeModal('scenarioModal');if(type.includes('Local AI')) await simulateLocalAi(); else if(type.includes('Support')) await simulateSupport(); else if(type.includes('Health')) await simulateHealthSignal(); else if(type.includes('AR')) await simulateArOpened(); else await simulateQuiz();showToast(type+' completed');}
+async function submitStudentEvent(){const ev={id:'evt_'+Date.now(),studentId:document.getElementById('evStudent').value,deviceId:'console',sessionId:'console',type:document.getElementById('evType').value,source:'console',lessonId:document.getElementById('evLesson').value,safeSummary:document.getElementById('evSummary').value,privacyLevel:document.getElementById('evPrivacy').value,createdAt:new Date().toISOString(),metadata:{score:Number(document.getElementById('evScore').value),accuracy:Number(document.getElementById('evAcc').value)}};await api('/v1/student/events/batch',{method:'POST',body:JSON.stringify({deviceId:'console',sessionId:'console',events:[ev]})});closeModal('studentEventModal');await refreshSystem();showToast('Student event submitted');}
+async function refreshReports(){await Promise.all([api('/v1/teacher/classes/class_8a/dashboard',{headers:{'x-demo-user-id':'teacher_001','x-demo-role':'subject_teacher'}}),api('/v1/teacher/students/stu_001/report',{headers:{'x-demo-user-id':'teacher_001','x-demo-role':'subject_teacher'}}),api('/v1/parent/children/stu_001/report',{headers:{'x-demo-user-id':'parent_001','x-demo-role':'parent'}}),api('/v1/admin/schools/school_001/overview',{headers:{'x-demo-user-id':'admin_001','x-demo-role':'school_admin'}})]);await refreshSystem();showToast('Reports refreshed');}
+async function testRoleAccess(){const denied=await api('/v1/admin/schools/school_001/overview',{headers:{'x-demo-user-id':'teacher_001','x-demo-role':'subject_teacher'}});if(denied.ok===false)showToast('Permission denied: this role cannot access this report.');else showToast('Role access test completed');}
+async function seedData(){await api('/v1/demo/seed-events',{method:'POST',body:'{}'});await refreshSystem();showToast('Seeded demo events');}
+async function simulateLocalAi(){await api('/v1/student/events/batch',{method:'POST',body:JSON.stringify({deviceId:'console',sessionId:'console',events:[{id:'evt_local_'+Date.now(),studentId:'stu_001',deviceId:'console',sessionId:'console',type:'local_ai_used',source:'local_ai',safeSummary:'Student used local AI for explanation.',privacyLevel:'normal',createdAt:new Date().toISOString()}]})});await refreshSystem();}
+async function simulateQuiz(){await api('/v1/student/events/batch',{method:'POST',body:JSON.stringify({deviceId:'console',sessionId:'console',events:[{id:'evt_quiz_'+Date.now(),studentId:'stu_001',deviceId:'console',sessionId:'console',type:'quiz_completed',source:'quiz',severity:'medium',safeSummary:'Quiz completed with review needed.',privacyLevel:'normal',createdAt:new Date().toISOString()}]})});await refreshSystem();}
+async function simulateSupport(){await api('/v1/student/events/batch',{method:'POST',body:JSON.stringify({deviceId:'console',sessionId:'console',events:[{id:'evt_support_'+Date.now(),studentId:'stu_001',deviceId:'console',sessionId:'console',type:'support_requested',source:'support',severity:'low',safeSummary:'Student requested teacher support.',privacyLevel:'sensitive',createdAt:new Date().toISOString()}]})});await refreshSystem();}
+async function simulateArOpened(){await api('/v1/student/events/batch',{method:'POST',body:JSON.stringify({deviceId:'console',sessionId:'console',events:[{id:'evt_ar_'+Date.now(),studentId:'stu_001',deviceId:'console',sessionId:'console',type:'group_work_activity',source:'ar',safeSummary:'Student opened AR assignment.',privacyLevel:'normal',createdAt:new Date().toISOString()}]})});await refreshSystem();}
+async function simulateHealthSignal(){await api('/v1/health/metrics/ingest',{method:'POST',body:JSON.stringify({studentId:'stu_001',sourceApp:'parent',capturedAt:new Date().toISOString(),sleepMinutes:320,restingHeartRate:102})});await refreshSystem();showToast('Health signal processed');}
+async function refreshSystem(){const [health,db,teacher,parent,admin,ai,events]=await Promise.all([
+  api('/health'),
+  api('/v1/admin/db-stats',{headers:{'x-demo-user-id':'admin_001','x-demo-role':'school_admin'}}),
+  api('/v1/teacher/classes/class_8a/dashboard',{headers:{'x-demo-user-id':'teacher_001','x-demo-role':'subject_teacher'}}),
+  api('/v1/parent/children/stu_001/report',{headers:{'x-demo-user-id':'parent_001','x-demo-role':'parent'}}),
+  api('/v1/admin/schools/school_001/overview',{headers:{'x-demo-user-id':'admin_001','x-demo-role':'school_admin'}}),
+  api('/v1/admin/ai-usage',{headers:{'x-demo-user-id':'admin_001','x-demo-role':'school_admin'}}),
+  api('/v1/teacher/students/stu_001/learning-signals',{headers:{'x-demo-user-id':'teacher_001','x-demo-role':'subject_teacher'}})
+]);
+state.db={...db,ok:health.ok};state.teacher=teacher;state.parent=parent;state.admin=admin;state.ai=ai;state.events=events.signals||[];
+renderOverview();renderPipeline();renderEvents();renderReportsTab('teacher');renderPrivacy();renderAiOps();renderPrivacyAudit();}
+initNav();refreshSystem().catch(e=>{showToast('System load error');document.getElementById('devPayload').textContent=String(e);});
+</script>
+</body>
+</html>

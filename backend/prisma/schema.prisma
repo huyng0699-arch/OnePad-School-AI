@@ -1,0 +1,464 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id        String   @id
+  name      String
+  createdAt DateTime @default(now())
+
+  classrooms Classroom[]
+  students   Student[]
+  teachers   Teacher[]
+}
+
+model Classroom {
+  id        String   @id
+  schoolId  String
+  name      String
+  grade     String
+  createdAt DateTime @default(now())
+
+  school   School    @relation(fields: [schoolId], references: [id])
+  students Student[]
+}
+
+model User {
+  id          String   @id
+  role        String
+  displayName String
+  email       String?
+  createdAt   DateTime @default(now())
+}
+
+model Student {
+  id        String   @id
+  userId    String?
+  fullName  String
+  classId   String
+  schoolId  String
+  createdAt DateTime @default(now())
+
+  school     School       @relation(fields: [schoolId], references: [id])
+  classroom  Classroom    @relation(fields: [classId], references: [id])
+  events     StudentEvent[]
+  teacherReports TeacherStudentReport[]
+  parentReports  ParentChildReport[]
+}
+
+model Teacher {
+  id        String   @id
+  userId    String?
+  fullName  String
+  schoolId  String
+  createdAt DateTime @default(now())
+
+  school       School              @relation(fields: [schoolId], references: [id])
+}
+
+model Guardian {
+  id        String   @id
+  userId    String?
+  fullName  String
+  createdAt DateTime @default(now())
+
+  links GuardianStudentLink[]
+}
+
+model GuardianStudentLink {
+  id           String   @id
+  guardianId   String
+  studentId    String
+  relationship String
+  createdAt    DateTime @default(now())
+
+  guardian Guardian @relation(fields: [guardianId], references: [id])
+}
+
+model TeacherClassAccess {
+  id        String   @id
+  teacherId String
+  classId   String
+  subjectId String?
+  roleType  String
+  createdAt DateTime @default(now())
+}
+
+model RolePermission {
+  id                    String   @id
+  schoolId              String
+  role                  String
+  canManageUsers        Boolean  @default(false)
+  canManageRolePolicy   Boolean  @default(false)
+  canManageAiPolicy     Boolean  @default(false)
+  canViewSensitiveSupport Boolean @default(false)
+  canViewRawPrivateText Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model EducationGuardianConsent {
+  id                               String   @id
+  studentId                        String
+  guardianTeacherId                String
+  active                           Boolean  @default(true)
+  medicalSummarySafe               String?
+  psychologicalSupportSummarySafe  String?
+  supportPlan                      String?
+  createdAt                        DateTime @default(now())
+  updatedAt                        DateTime @updatedAt
+}
+
+model AccessAuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String
+  actorRole    String
+  action       String
+  resourceType String
+  resourceId   String
+  reason       String
+  createdAt    DateTime @default(now())
+}
+
+model Lesson {
+  id        String   @id
+  subject   String
+  title     String
+  grade     String
+  createdAt DateTime @default(now())
+}
+
+model Assignment {
+  id        String   @id
+  studentId String?
+  classId   String?
+  lessonId  String
+  title     String
+  status    String
+  dueDate   DateTime?
+  createdAt DateTime @default(now())
+}
+
+model QuizResult {
+  id                  String   @id @default(uuid())
+  studentId            String
+  lessonId             String?
+  score                Float
+  total                Int
+  accuracy             Float
+  repeatedMistakesJson String?
+  createdAt            DateTime @default(now())
+}
+
+model StudentEvent {
+  id             String   @id
+  studentId       String
+  deviceId        String
+  sessionId       String
+  type            String
+  source          String
+  severity        String?
+  lessonId        String?
+  pageNumber      Int?
+  assignmentId    String?
+  quizId          String?
+  groupWorkId     String?
+  safeSummary     String
+  metadataJson    String?
+  rawPrivateText  String?
+  privacyLevel    String
+  createdAt       DateTime
+  syncedAt        DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id])
+}
+
+model HiddenSignal {
+  id          String   @id @default(uuid())
+  studentId   String
+  type        String
+  source      String
+  severity    String
+  safeSummary String
+  createdAt   DateTime @default(now())
+}
+
+model SafeSummary {
+  id          String   @id @default(uuid())
+  studentId   String
+  summaryType String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TeacherStudentReport {
+  id                      String   @id @default(uuid())
+  studentId                String
+  classId                  String
+  academicSummary          String
+  learningSupportSummary   String
+  wellbeingSummary         String
+  groupWorkSummary         String
+  recommendedTeacherAction String
+  recentEventsJson         String
+  updatedAt                DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id])
+}
+
+model ParentChildReport {
+  id                             String   @id @default(uuid())
+  studentId                       String
+  todayLearningSummary            String
+  progressSummary                 String
+  mentalAndCharacterGrowthSummary String
+  recommendedParentAction         String
+  teacherNote                     String?
+  updatedAt                       DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id])
+}
+
+model AdminClassAggregate {
+  id                      String   @id @default(uuid())
+  schoolId                 String
+  classId                  String?
+  totalStudents            Int
+  localAiEvents            Int
+  cloudAiEvents            Int
+  supportLow               Int
+  supportMedium            Int
+  supportHigh              Int
+  assignmentCompletionRate Float
+  privacyReadinessSummary  String
+  updatedAt                DateTime @updatedAt
+}
+
+model LocalAiStatusReport {
+  id           String   @id @default(uuid())
+  studentId     String
+  modelId       String
+  quantization  String
+  status        String
+  action        String?
+  latencyMs     Int?
+  createdAt     DateTime @default(now())
+}
+
+model SupportRequest {
+  id          String   @id @default(uuid())
+  studentId   String
+  reason      String
+  safeSummary String
+  privacyLevel String
+  createdAt   DateTime @default(now())
+}
+
+model GroupWorkEvent {
+  id            String   @id @default(uuid())
+  studentId      String
+  groupWorkId    String?
+  assignmentId   String?
+  activityType   String
+  safeSummary    String
+  createdAt      DateTime @default(now())
+}
+
+model AiKeyCredential {
+  id              String   @id @default(uuid())
+  ownerType       String
+  ownerId         String
+  provider        String
+  keyId           String   @unique
+  encryptedApiKey String
+  maskedKey       String
+  status          String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  lastUsedAt      DateTime?
+  requestCount    Int      @default(0)
+  tokenEstimate   Int      @default(0)
+  errorCount      Int      @default(0)
+}
+
+model AuthoringProject {
+  id         String   @id @default(uuid())
+  teacherId  String
+  schoolId   String
+  title      String
+  subject    String
+  grade      String
+  language   String
+  rawInput   String
+  status     String
+  aiKeyScope String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model StructuredLessonRecord {
+  id                   String   @id @default(uuid())
+  authoringProjectId   String
+  lessonId             String
+  title                String
+  subject              String
+  grade                String
+  language             String
+  structuredJson       String
+  teacherGuideJson     String?
+  quizSeedJson         String?
+  rubricJson           String?
+  adaptiveVersionsJson String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model PublishedLesson {
+  id                 String   @id @default(uuid())
+  lessonId           String
+  structuredLessonId String
+  classId            String?
+  subject            String
+  grade              String
+  publishedByTeacherId String
+  status             String
+  createdAt          DateTime @default(now())
+}
+
+model LessonAssignment {
+  id                String   @id
+  publishedLessonId String
+  classId           String
+  requireQuiz       Boolean  @default(false)
+  allowLocalAiHelp  Boolean  @default(true)
+  groupWorkEnabled  Boolean  @default(false)
+  dueDate           DateTime?
+  createdAt         DateTime @default(now())
+}
+
+model AiAuthoringUsage {
+  id            String   @id @default(uuid())
+  projectId     String?
+  teacherId     String
+  schoolId      String
+  provider      String
+  keyScope      String
+  keyId         String?
+  modelId       String
+  action        String
+  status        String
+  latencyMs     Int?
+  tokenEstimate Int?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+}
+
+model ApiKeyUsage {
+  id            String   @id @default(uuid())
+  keyId         String
+  userId        String
+  role          String
+  deviceId      String
+  modelId       String
+  quantization  String
+  requestCount  Int      @default(0)
+  tokenEstimate Int      @default(0)
+  costEstimate  Float    @default(0)
+  successCount  Int      @default(0)
+  errorCount    Int      @default(0)
+  lastUsedAt    DateTime?
+  createdAt     DateTime @default(now())
+}
+
+model RankingSnapshot {
+  id          String   @id @default(uuid())
+  schoolId    String
+  classId     String?
+  studentId   String
+  rankingType String
+  score       Float
+  rank        Int
+  trend       String
+  createdAt   DateTime @default(now())
+}
+
+model PhoneHealthMetric {
+  id               String   @id @default(uuid())
+  studentId        String
+  sourceApp        String
+  capturedAt       DateTime
+  steps            Int?
+  activeMinutes    Int?
+  sleepMinutes     Int?
+  restingHeartRate Int?
+  hrv              Float?
+  bloodOxygen      Float?
+  metadataJson     String?
+  createdAt        DateTime @default(now())
+}
+
+model ChildHealthAlert {
+  id                 String   @id @default(uuid())
+  studentId          String
+  level              String
+  score              Float
+  confidence         Float
+  trendWindowDays    Int
+  triggeredSignalsJson String
+  safeSummary        String
+  recommendedAction  String
+  createdAt          DateTime @default(now())
+  resolvedAt         DateTime?
+}
+
+model StudentTrendSnapshot {
+  id             String   @id @default(cuid())
+  studentId      String
+  level          String
+  totalDeduction Float
+  direction      String
+  confidence     String
+  redAlert       Boolean  @default(false)
+  packetJson     String
+  source         String
+  generatedAt    DateTime
+  createdAt      DateTime @default(now())
+}
+
+model StudentTrendReport {
+  id               String   @id @default(cuid())
+  studentId        String
+  packetId         String
+  audience         String
+  title            String
+  summary          String
+  keyFactors       String
+  suggestedActions String
+  redAlert         Boolean  @default(false)
+  provider         String
+  source           String
+  generatedAt      DateTime
+  createdAt        DateTime @default(now())
+}
+
+model StudentTrendChartPoint {
+  id                        String   @id @default(cuid())
+  studentId                 String
+  date                      DateTime
+  totalDeduction            Float
+  level                     String
+  sleepDeduction            Float
+  fatigueDeduction          Float
+  studyLoadDeduction        Float
+  learningBehaviorDeduction Float
+  wellbeingDeduction        Float
+  conversationDeduction     Float
+  supportSignalDeduction    Float
+  createdAt                 DateTime @default(now())
+}

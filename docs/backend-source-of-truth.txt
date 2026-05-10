@@ -1,0 +1,35 @@
+Backend Source of Truth
+
+Canonical backend
+- `backend/` is the production/demo source of truth.
+
+Legacy tree
+- `OnePadSchoolAI/backend/` is legacy/deprecated and must not be used as runtime backend for parent/teacher/admin/student sync.
+
+Environment
+- Student app: `EXPO_PUBLIC_ONEPAD_API_BASE_URL`
+- Parent/Teacher/Admin: `NEXT_PUBLIC_ONEPAD_API_BASE_URL`
+- Default local URL: `http://localhost:3000`
+
+Trend + parent support API set
+- Parent:
+  - GET /v1/parent/children/:studentId/trend-report
+  - GET /v1/parent/children/:studentId/trend-chart?days=14
+  - GET /v1/parent/children/:studentId/health-alerts
+  - GET /v1/parent/children/:studentId/report
+- Student trends:
+  - POST /v1/student-trends/evaluate
+  - GET /v1/student-trends/students/:studentId/latest
+- Teacher:
+  - GET /v1/teacher/students/:studentId/trend-summary
+  - GET /v1/teacher/support-queue
+- Admin:
+  - GET /v1/admin/schools/:schoolId/trend-overview
+  - GET /v1/admin/students/:studentId/trend-detail
+  - POST /v1/admin/jobs/nightly-student-summary/run
+  - GET /v1/admin/audit-logs
+
+Nightly flow
+- Daytime: student app logs lightweight events.
+- Nightly: backend job aggregates, scores, writes trend snapshot/report/chart.
+- Morning: parent/teacher/admin UI reads processed DTOs only.

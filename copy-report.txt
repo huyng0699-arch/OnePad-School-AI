@@ -1,0 +1,8 @@
+Copied dir: backend
+Copied dir: OnePadSchoolAI
+Copied dir: parent-app
+Copied dir: teacher-app
+Copied dir: school-admin-app
+Copied dir: docs
+Copied dir: scripts
+Copied file: README.md
