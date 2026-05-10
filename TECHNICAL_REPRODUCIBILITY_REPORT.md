@@ -3,7 +3,7 @@
 
 ## 1) Target Track
 - Primary: **Future of Education**
-- Local runtime path: **Cactus/Gemma local path is implemented in code when available**
+- Local runtime path: **Cactus/Gemma provider path is represented in code and can be enabled when the required runtime endpoint is configured.**
 
 Evidence:
 - Student app includes Cactus dependency: `OnePadSchoolAI/package.json` (`cactus-react-native`)
@@ -198,3 +198,4 @@ See:
 - `LICENSE`
 - `THIRD_PARTY_NOTICES.md`
 - `docs/license-and-ip-compliance.md`
+

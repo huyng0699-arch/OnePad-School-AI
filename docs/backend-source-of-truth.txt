@@ -1,10 +1,7 @@
 Backend Source of Truth
 
-Canonical backend
-- `backend/` is the production/demo source of truth.
-
-Legacy tree
-- `OnePadSchoolAI/backend/` is legacy/deprecated and must not be used as runtime backend for parent/teacher/admin/student sync.
+Runtime backend
+- `backend/` is the source-of-truth backend for the public demo workflow.
 
 Environment
 - Student app: `EXPO_PUBLIC_BACKEND_URL`
@@ -30,6 +27,6 @@ Trend + parent support API set
   - GET /v1/admin/audit-logs
 
 Nightly flow
-- Daytime: student app logs lightweight events.
-- Nightly: backend job aggregates, scores, writes trend snapshot/report/chart.
-- Morning: parent/teacher/admin UI reads processed DTOs only.
+- Daytime: Student App logs lightweight events.
+- Nightly: backend job aggregates, scores, and writes trend snapshot/report/chart records.
+- Morning: Parent/Teacher/Admin UI reads processed DTOs only.

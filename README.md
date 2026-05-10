@@ -1,39 +1,16 @@
 # OnePad School AI
 
-OnePad School AI is a local-first school AI ecosystem connecting Student, Parent, Teacher, Admin apps with a backend trend analysis pipeline, role-safe reports, and support workflows around each student.
+OnePad School AI is a student-centric education ecosystem that connects Student, Parent, Teacher, and Admin applications with a backend trend analysis pipeline and role-safe reporting.
 
-## License and IP Compliance
+## What This Repository Demonstrates
 
-This public hackathon submission of OnePad School AI is licensed under CC BY 4.0 unless otherwise noted.
+This repository demonstrates a public, reproducible hackathon version of OnePad School AI:
 
-You are free to share and adapt the project, including for commercial purposes, as long as appropriate credit is given.
-
-Third-party libraries, frameworks, SDKs, pretrained models, model weights, datasets, generated media, external assets, and trademarks remain under their respective licenses or terms.
-
-Gemma/Cactus/local model weights, API keys, private credentials, local databases, APK/AAB files, node_modules, cache files, and build outputs are not committed to this repository.
-
-All demo student records are synthetic. No real student health, wellbeing, learning, or personal data is included.
-
-Generated media or demo assets used in the hackathon submission are original, properly licensed, or AI-generated demo assets unless otherwise noted.
-
-Also see:
-- LICENSE
-- THIRD_PARTY_NOTICES.md
-- docs/license-and-ip-compliance.md
-- TECHNICAL_REPRODUCIBILITY_REPORT.md
-
-## Project Overview
-
-Apps:
-- OnePadSchoolAI: Student App
-- parent-app: Parent App
-- teacher-app: Teacher App
-- school-admin-app: Admin App
-- backend: source-of-truth backend
-
-Backend source of truth:
-- `backend/` is the only backend used for the hackathon demo/product flow.
-- `OnePadSchoolAI/backend/` is legacy/deprecated and intentionally excluded from the clean GitHub export.
+- A Student App for lesson reading, AI tutoring, quiz flow, wellbeing check-in, health/readiness views, and event logging.
+- A Teacher App for lesson authoring/publishing and support workflows.
+- A backend source-of-truth for synthetic demo data, nightly trend processing, reports, charts, support queue, and audit logs.
+- A Parent App that renders Wellbeing & Learning Trend, Health & Wellbeing Vault charts, Parent Support items, and recommendation panels from backend DTOs.
+- An Admin App that renders aggregate health/wellbeing trend overview and audit logs.
 
 ## Core Demo Flow
 
@@ -46,15 +23,28 @@ Backend source of truth:
 - Teacher App shows support queue.
 - Admin App shows aggregate health/wellbeing overview and audit logs.
 
-## What This Repository Demonstrates
+## Architecture
 
-This repository demonstrates a public, reproducible hackathon version of OnePad School AI:
+- `OnePadSchoolAI/`: Student mobile app (Expo/React Native)
+- `parent-app/`: Parent web app
+- `teacher-app/`: Teacher web app
+- `school-admin-app/`: Admin web app
+- `backend/`: backend services, trend pipeline, APIs, Prisma schema/seed
 
-- A Student App for lesson reading, AI tutoring, quiz flow, wellbeing check-in, health/readiness views, and event logging.
-- A Teacher App for lesson authoring/publishing and support workflows.
-- A backend source-of-truth for synthetic demo data, nightly trend processing, reports, charts, support queue, and audit logs.
-- A Parent App that renders Wellbeing & Learning Trend, Health & Wellbeing Vault charts, Parent Support items, and recommendation panels from backend DTOs.
-- An Admin App that renders aggregate health/wellbeing trend overview and audit logs.
+## Repository Structure
+
+- `backend/`
+- `OnePadSchoolAI/`
+- `parent-app/`
+- `teacher-app/`
+- `school-admin-app/`
+- `docs/`
+- `TECHNICAL_REPRODUCIBILITY_REPORT.md`
+- `THIRD_PARTY_NOTICES.md`
+
+## Backend
+
+`backend/` is the source-of-truth backend for the public demo workflow.
 
 ## Reproducible Demo Workflow
 
@@ -117,9 +107,8 @@ npm run dev
 ## Environment Variables
 
 - Real API keys are not committed.
-- Copy .env.example to .env locally.
+- Copy `.env.example` to `.env` locally.
 - Fill provider/backend URLs locally.
-
 
 ### Gemini API Configuration (Two Ways)
 
@@ -141,13 +130,11 @@ Notes:
 - If both are present, the runtime key saved from UI is used first.
 - Never commit real API keys or `.env` files.
 
-## Android APK
+## Demo Data and Privacy
 
-APK/AAB files are build artifacts and are not committed to this repository.
-
-If an Android build is needed for review, it should be produced from source or attached separately through GitHub Releases.
-
-Generated APK/AAB files must not be committed.
+- Demo student records are synthetic.
+- No real student health, wellbeing, learning, or personal data is included.
+- Raw private personal data is not included in this public repository.
 
 ## Models / Weights
 
@@ -160,9 +147,39 @@ If Gemma or local models are enabled, users must download or initialize the rele
 This project does not claim endorsement by Google or any model provider.
 Google/Gemma/Cactus names, trademarks, and model files remain subject to their respective terms.
 
+## Android APK
+
+APK/AAB files are build artifacts and are not committed to this repository.
+
+If an Android build is needed, it should be produced from source or attached separately through GitHub Releases.
+
+Generated APK/AAB files must not be committed.
+
+## License and IP Compliance
+
+This public hackathon submission of OnePad School AI is licensed under CC BY 4.0 unless otherwise noted.
+
+You are free to share and adapt the project, including for commercial purposes, as long as appropriate credit is given.
+
+Third-party libraries, frameworks, SDKs, pretrained models, model weights, datasets, generated media, external assets, and trademarks remain under their respective licenses or terms.
+
+Gemma/Cactus/local model weights, API keys, private credentials, local databases, APK/AAB files, node_modules, cache files, and build outputs are not committed to this repository.
+
+All demo student records are synthetic. No real student health, wellbeing, learning, or personal data is included.
+
+Generated media or demo assets used in the hackathon submission are original, properly licensed, or AI-generated demo assets unless otherwise noted.
+
 ## Known Limitations
 
 Backend nightly reports may use `template_fallback` unless local Gemma/Cactus runtime is connected in the backend process.
 Do not overclaim local Gemma in backend nightly unless it is actually connected.
 
+## Technical Documentation
 
+- `TECHNICAL_REPRODUCIBILITY_REPORT.md`
+- `docs/backend-source-of-truth.txt`
+- `docs/student-trend-algorithm.txt`
+- `docs/health-wellbeing-algorithms.txt`
+- `docs/license-and-ip-compliance.md`
+- `THIRD_PARTY_NOTICES.md`
+- `LICENSE`
