@@ -7,9 +7,9 @@ Legacy tree
 - `OnePadSchoolAI/backend/` is legacy/deprecated and must not be used as runtime backend for parent/teacher/admin/student sync.
 
 Environment
-- Student app: `EXPO_PUBLIC_ONEPAD_API_BASE_URL`
-- Parent/Teacher/Admin: `NEXT_PUBLIC_ONEPAD_API_BASE_URL`
-- Default local URL: `http://localhost:3000`
+- Student app: `EXPO_PUBLIC_BACKEND_URL`
+- Parent/Teacher/Admin: `NEXT_PUBLIC_BACKEND_URL`
+- Default local URL: `http://localhost:3001`
 
 Trend + parent support API set
 - Parent:

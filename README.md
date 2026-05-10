@@ -46,6 +46,27 @@ Backend source of truth:
 - Teacher App shows support queue.
 - Admin App shows aggregate health/wellbeing overview and audit logs.
 
+## What This Repository Demonstrates
+
+This repository demonstrates a public, reproducible hackathon version of OnePad School AI:
+
+- A Student App for lesson reading, AI tutoring, quiz flow, wellbeing check-in, health/readiness views, and event logging.
+- A Teacher App for lesson authoring/publishing and support workflows.
+- A backend source-of-truth for synthetic demo data, nightly trend processing, reports, charts, support queue, and audit logs.
+- A Parent App that renders Wellbeing & Learning Trend, Health & Wellbeing Vault charts, Parent Support items, and recommendation panels from backend DTOs.
+- An Admin App that renders aggregate health/wellbeing trend overview and audit logs.
+
+## Reproducible Demo Workflow
+
+1. Install backend dependencies.
+2. Generate and push the Prisma schema.
+3. Seed synthetic demo data.
+4. Start the backend.
+5. Trigger the nightly student summary job.
+6. Open Parent App to view Wellbeing & Learning Trend, Health & Wellbeing Vault, and Parent Support.
+7. Open Teacher App to view support queue.
+8. Open Admin App to view Health & Wellbeing aggregate and audit logs.
+
 ## Setup Commands
 
 Backend:
@@ -96,8 +117,19 @@ npm run dev
 ## Environment Variables
 
 - Real API keys are not committed.
-- Copy `.env.example` to `.env` locally.
+- Copy .env.example to .env locally.
 - Fill provider/backend URLs locally.
+
+### Optional Gemini API Setup (Local Only)
+
+If you want to test Gemini-backed paths locally:
+
+1. Copy `OnePadSchoolAI/.env.example` to `OnePadSchoolAI/.env`.
+2. Set `EXPO_PUBLIC_DEV_GEMINI_API_KEY=YOUR_KEY` in local `.env`.
+3. Keep `EXPO_PUBLIC_DEV_GEMINI_MODEL` as needed for your local test.
+4. Never commit `.env` or real API keys.
+
+For teacher/backend server-side AI paths, configure server-side keys only in local env files and keep them out of Git.
 
 ## Android APK
 
@@ -122,6 +154,4 @@ Google/Gemma/Cactus names, trademarks, and model files remain subject to their r
 
 Backend nightly reports may use `template_fallback` unless local Gemma/Cactus runtime is connected in the backend process.
 Do not overclaim local Gemma in backend nightly unless it is actually connected.
-
-
 

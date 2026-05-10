@@ -30,11 +30,12 @@ Evidence:
   - `backend/src/modules/student-trends/student-trends.controller.ts`
 
 ### 2.4 Local/Cactus path (if available)
+- Local/Cactus path is represented in provider modes and can be used when the required runtime endpoint is configured.
 - Backend checks `GEMMA_LOCAL_CACTUS_URL` and attempts local generation:
   - `backend/src/modules/student-trends/student-trends.service.ts` (`generateRecommendation`)
 
 ### 2.5 Current backend nightly default reality
-- Backend can fall back to `template_fallback` when local/cloud path is unavailable:
+- Backend nightly recommendation can fall back to `template_fallback` when local/cloud generation is unavailable:
   - `backend/src/modules/student-trends/student-trends.service.ts`
 - Seed also contains fallback provider sample:
   - `backend/prisma/seed.ts`
@@ -102,7 +103,7 @@ Evidence:
   - `parent-app/app/support/page.tsx`
 
 ### 5.4 Recommendation panel
-- “Gemma 4 Recommendation” panel is rendered in parent vault page:
+- "Gemma 4 Recommendation" panel is rendered in parent vault page:
   - `parent-app/app/health-wellbeing-vault/page.tsx`
 - Provider badge explicitly shows runtime source (`GEMMA LOCAL` / `BACKEND CLOUD` / `TEMPLATE FALLBACK`).
 
@@ -115,7 +116,7 @@ Current repository status:
 
 This submission uses runtime inference + deterministic backend scoring + structured report generation.
 
-## 7) Reproducibility flow (judge workflow)
+## 7) Reproducible Demo Workflow
 ### 7.1 Backend setup
 ```bash
 cd backend
@@ -152,12 +153,41 @@ npm run start:dev
   - `school-admin-app/app/health-wellbeing/page.tsx`
   - `school-admin-app/app/audit-log/page.tsx`
 
-## 8) Limitations (explicit, no overclaim)
+## 8) What This Repository Demonstrates
+This repository demonstrates an end-to-end school AI workflow:
+
+- Teacher App creates or publishes learning content.
+- Student App supports lesson reading, AI tutoring, quiz flow, wellbeing check-in, health/readiness views, and lightweight event logging.
+- Backend stores synthetic demo data, runs the nightly trend pipeline, and creates NegativePointSummary, StudentTrendPacket, StudentTrendReport, and StudentTrendChartPoint records.
+- Parent App renders Wellbeing & Learning Trend, Health & Wellbeing Vault charts, Parent Support items, and the recommendation panel.
+- Teacher App renders support queue data from the backend.
+- Admin App renders aggregate trend overview and audit logs.
+- The public repo excludes real student data, secrets, model weights, APK/AAB artifacts, node_modules, build output, and local databases.
+
+## 9) Reproducibility Checklist
+After setup and seeding, a reviewer/developer can verify:
+
+- Backend builds successfully.
+- Prisma schema can be generated and pushed.
+- Synthetic demo data can be seeded.
+- The nightly trend pipeline can be triggered through `POST /v1/admin/jobs/nightly-student-summary/run`.
+- Parent trend report endpoint returns a structured DTO.
+- Parent 14-day chart endpoint returns trend chart points.
+- Parent Home renders Wellbeing & Learning Trend.
+- Parent Health & Wellbeing Vault renders the 14-day chart and five-category breakdown.
+- Parent Support renders priority support items when available.
+- Teacher Support Queue reads backend data.
+- Admin Health & Wellbeing page reads aggregate trend data.
+- Admin Audit Log reads audit entries.
+- Provider badges show `GEMMA LOCAL`, `BACKEND CLOUD`, or `TEMPLATE FALLBACK` according to runtime state.
+- Source badges distinguish live/backend/demo data where implemented.
+
+## 10) Limitations (explicit, no overclaim)
 - Demo data in this public repo is **synthetic only**; no real student data is included.
 - Backend nightly recommendation path may run with `template_fallback` unless local/cloud provider is connected.
 - Local Gemma/Cactus in backend nightly is **not guaranteed fully connected** in every runtime environment without provider setup.
 
-## 9) Compliance summary
+## 11) Compliance Summary
 - No real student personal data committed.
 - No API keys/credentials committed.
 - No model weights committed.

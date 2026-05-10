@@ -26,10 +26,11 @@
 - Do not use third-party logos/trademarks unless allowed.
 
 7. Competition compliance:
-- This repo is prepared for hackathon judging and technical review.
+- This repo is prepared for public hackathon submission review and technical review.
 - If competition rules impose additional winner obligations, those apply according to the competition rules.
 
 Gemma/Cactus/local model weights are not committed to this repository.
 If Gemma or local models are enabled, users must download or initialize the relevant model files separately according to the official model/runtime instructions and the applicable model license/terms.
 This project does not claim endorsement by Google or any model provider.
 Google/Gemma/Cactus names, trademarks, and model files remain subject to their respective terms.
+
