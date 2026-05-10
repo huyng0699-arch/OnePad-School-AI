@@ -120,16 +120,26 @@ npm run dev
 - Copy .env.example to .env locally.
 - Fill provider/backend URLs locally.
 
-### Optional Gemini API Setup (Local Only)
 
-If you want to test Gemini-backed paths locally:
+### Gemini API Configuration (Two Ways)
 
-1. Copy `OnePadSchoolAI/.env.example` to `OnePadSchoolAI/.env`.
-2. Set `EXPO_PUBLIC_DEV_GEMINI_API_KEY=YOUR_KEY` in local `.env`.
-3. Keep `EXPO_PUBLIC_DEV_GEMINI_MODEL` as needed for your local test.
-4. Never commit `.env` or real API keys.
+You can configure Gemini API in either method below:
 
-For teacher/backend server-side AI paths, configure server-side keys only in local env files and keep them out of Git.
+1. Environment file (recommended for local dev workflows)
+- Copy `OnePadSchoolAI/.env.example` to `OnePadSchoolAI/.env`.
+- Set `EXPO_PUBLIC_DEV_GEMINI_API_KEY=YOUR_KEY`.
+- Set `EXPO_PUBLIC_DEV_GEMINI_MODEL` if needed.
+
+2. In-app UI (Student Hub screen)
+- Open `Student Hub` -> `AI & App Settings`.
+- Find `Gemini API Key (Local Device Only)`.
+- Paste key and tap `Save API Key`.
+- Use `Clear API Key` to remove it from the local device.
+
+Notes:
+- In-app key is stored locally on device and not committed to Git.
+- If both are present, the runtime key saved from UI is used first.
+- Never commit real API keys or `.env` files.
 
 ## Android APK
 
@@ -154,4 +164,5 @@ Google/Gemma/Cactus names, trademarks, and model files remain subject to their r
 
 Backend nightly reports may use `template_fallback` unless local Gemma/Cactus runtime is connected in the backend process.
 Do not overclaim local Gemma in backend nightly unless it is actually connected.
+
 

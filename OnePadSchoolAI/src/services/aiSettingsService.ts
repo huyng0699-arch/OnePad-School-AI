@@ -1,5 +1,6 @@
 export type AiProviderMode = 'gemini' | 'local_server' | 'cactus' | 'local_ai';
 export type AiKnowledgeScope = 'lesson_only' | 'general_tutor' | 'web_grounded';
+const RUNTIME_GEMINI_KEY_STORAGE = 'onepad_runtime_gemini_api_key';
 
 export type AiRuntimeSettings = {
   provider: AiProviderMode;
@@ -27,6 +28,7 @@ let runtimeSettings: AiRuntimeSettings = {
   knowledgeScope: 'general_tutor',
   cloudFallbackOnLocalFail: true
 };
+let runtimeGeminiApiKeyOverride = '';
 
 export function getAiSettings(): AiRuntimeSettings {
   return { ...runtimeSettings };
@@ -65,7 +67,45 @@ export function setCloudModel(model: string): { ok: boolean; message: string } {
 }
 
 export function isApiKeyConfigured(): boolean {
-  return Boolean(process.env.EXPO_PUBLIC_DEV_GEMINI_API_KEY);
+  return Boolean(runtimeGeminiApiKeyOverride || process.env.EXPO_PUBLIC_DEV_GEMINI_API_KEY);
+}
+
+export function getRuntimeGeminiApiKeyOverride(): string {
+  return runtimeGeminiApiKeyOverride;
+}
+
+export async function loadRuntimeGeminiApiKeyOverride(): Promise<string> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default as {
+      getItem: (key: string) => Promise<string | null>;
+    };
+    const stored = (await AsyncStorage.getItem(RUNTIME_GEMINI_KEY_STORAGE)) || '';
+    runtimeGeminiApiKeyOverride = stored.trim();
+    return runtimeGeminiApiKeyOverride;
+  } catch {
+    runtimeGeminiApiKeyOverride = '';
+    return '';
+  }
+}
+
+export async function setRuntimeGeminiApiKeyOverride(value: string): Promise<void> {
+  const next = (value || '').trim();
+  runtimeGeminiApiKeyOverride = next;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default as {
+      setItem: (key: string, value: string) => Promise<void>;
+      removeItem: (key: string) => Promise<void>;
+    };
+    if (next) {
+      await AsyncStorage.setItem(RUNTIME_GEMINI_KEY_STORAGE, next);
+    } else {
+      await AsyncStorage.removeItem(RUNTIME_GEMINI_KEY_STORAGE);
+    }
+  } catch {
+    // Keep runtime override in memory even if persistence fails.
+  }
 }
 
 export function isLocalAiAvailable(): boolean {

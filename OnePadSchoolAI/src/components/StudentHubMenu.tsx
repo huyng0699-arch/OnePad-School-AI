@@ -30,12 +30,14 @@ import {
   getCloudModelLabel,
   getActiveKnowledgeScope,
   getCloudFallbackOnLocalFail,
+  loadRuntimeGeminiApiKeyOverride,
   isApiKeyConfigured,
   isLocalAiAvailable,
   isWebGroundingAvailable,
   setAiProvider,
   setCloudModel,
   setCloudFallbackOnLocalFail,
+  setRuntimeGeminiApiKeyOverride,
   setKnowledgeScope
 } from '../services/aiSettingsService';
 import type { LocalModelConfig } from '../services/ai/localModelConfig';
@@ -131,6 +133,7 @@ export default function StudentHubMenu({
     null | 'initialize' | 'download' | 'load' | 'test'
   >(null);
   const [localAiOutput, setLocalAiOutput] = React.useState<string>('');
+  const [geminiApiKeyDraft, setGeminiApiKeyDraft] = React.useState<string>('');
   const [aiSettingsVersion, setAiSettingsVersion] = React.useState<number>(0);
   const aiSettings = getAiSettings();
   const allowedModels = getAllowedCloudModels();
@@ -161,6 +164,15 @@ export default function StudentHubMenu({
       setActiveSection(initialSection);
     }
   }, [visible, initialSection]);
+
+  React.useEffect(() => {
+    if (!visible) return;
+    void (async () => {
+      const stored = await loadRuntimeGeminiApiKeyOverride();
+      setGeminiApiKeyDraft(stored);
+      refreshSettings();
+    })();
+  }, [visible]);
 
   const goToTool = (target: NavigateTarget) => {
     onClose();
@@ -929,6 +941,45 @@ export default function StudentHubMenu({
         <Text style={styles.item}>API Key: {isApiKeyConfigured() ? 'Configured' : 'Missing'}</Text>
         <Text style={styles.item}>Local AI: {isLocalAiAvailable() ? 'Available' : 'Coming Soon'}</Text>
         <Text style={styles.item}>Context mode: General chat does not send lesson content by default</Text>
+      </View>
+
+      <View style={styles.rowCard}>
+        <Text style={styles.itemStrong}>Gemini API Key (Local Device Only)</Text>
+        <Text style={styles.item}>Use this for personal Gemini online key or school-provided Gemini key.</Text>
+        <TextInput
+          value={geminiApiKeyDraft}
+          onChangeText={setGeminiApiKeyDraft}
+          placeholder="Paste Gemini API key (AIza...)"
+          placeholderTextColor="#94a3b8"
+          style={styles.textInput}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+        />
+        <View style={styles.advancedRow}>
+          <Pressable
+            style={({ pressed }) => [styles.secondaryBtnSmall, pressed ? styles.secondaryBtnSmallPressed : null]}
+            onPress={async () => {
+              await setRuntimeGeminiApiKeyOverride(geminiApiKeyDraft);
+              setSettingsMessage(geminiApiKeyDraft.trim() ? 'Gemini API key saved on this device.' : 'Gemini API key cleared.');
+              refreshSettings();
+            }}
+          >
+            <Text style={styles.secondaryBtnText}>Save API Key</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.secondaryBtnSmall, pressed ? styles.secondaryBtnSmallPressed : null]}
+            onPress={async () => {
+              setGeminiApiKeyDraft('');
+              await setRuntimeGeminiApiKeyOverride('');
+              setSettingsMessage('Gemini API key removed from this device.');
+              refreshSettings();
+            }}
+          >
+            <Text style={styles.secondaryBtnText}>Clear API Key</Text>
+          </Pressable>
+        </View>
+        <Text style={styles.itemSubtle}>Stored locally on device only. Do not commit real keys to Git.</Text>
       </View>
 
       <View style={styles.rowCard}>
