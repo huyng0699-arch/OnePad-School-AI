@@ -25,17 +25,17 @@ export default async function ParentPage() {
 
   return (
     <div className="shell"><main className="main">
-      <section className="section card solid">
+      <section className="section card solid parent-home-intro">
         <h2>Parent Home</h2>
         <p>Student-focused dashboard for daily wellbeing, learning trend, and support actions.</p>
       </section>
 
       <section className="section card solid">
         <h3>Wellbeing & Learning Trend</h3>
-        <p><b>Status:</b> {trend.level} · <b>Direction:</b> {trend.direction || trend.latestSummary?.direction || "stable"}</p>
+        <p className="trend-meta"><b>Status:</b> {trend.level} · <b>Direction:</b> {trend.direction || trend.latestSummary?.direction || "stable"}</p>
         <p><b>Generated:</b> {trend.generatedAt}</p>
         <p><b>Source:</b> {sourceLabel(trend.source)} · <b>Provider:</b> {providerLabel(trend.provider)}</p>
-        {redCard ? <div className="callout" style={{ border: "1px solid #ef4444" }}><p><b>RED ALERT</b></p><p>{trend.summary}</p></div> : null}
+        {redCard ? <div className="callout red-outline"><p><b>RED ALERT</b></p><p>{trend.summary}</p></div> : null}
         <p>{trend.summary}</p>
         <p>{(trend.keyFactors || []).slice(0, 3).join(" · ")}</p>
         <div className="pill-row">
