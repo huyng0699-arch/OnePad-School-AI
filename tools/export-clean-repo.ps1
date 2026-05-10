@@ -13,7 +13,7 @@ Get-ChildItem -LiteralPath $Destination -Force | Remove-Item -Recurse -Force
 $dirsToCopy = @('backend','OnePadSchoolAI','parent-app','teacher-app','school-admin-app','docs','scripts')
 $filesToCopy = @('README.md','package.json','package-lock.json','pnpm-lock.yaml','yarn.lock','.gitignore','tsconfig.json','tsconfig.base.json')
 $excludeDirs = @('.git','node_modules','dist','build','.next','out','coverage','.expo','.expo-shared','android\build','ios\build','.gradle','.turbo','.cache','tmp','temp','logs','uploads','downloaded-models','models','weights','.prisma','backend')
-$excludeFiles = @('.env','.env.local','.env.development','.env.production','.env.test','*.log','npm-debug.log*','yarn-debug.log*','yarn-error.log*','pnpm-debug.log*','*.db','*.sqlite','*.sqlite3','*.gguf','*.onnx','*.tflite','*.zip','*.apk','*.aab','*.bak','*.old','*.tmp','*_backup*','*_old*')
+$excludeFiles = @('.env','.env.local','.env.development','.env.production','.env.test','*.log','npm-debug.log*','yarn-debug.log*','yarn-error.log*','pnpm-debug.log*','*.db','*.sqlite','*.sqlite3','*.gguf','*.onnx','*.tflite','*.zip','*.apk','*.aab','*.bak','*.old','*.tmp','*_backup*','*_old*','*.tsbuildinfo','debug.keystore')
 
 $report = New-Object System.Collections.Generic.List[string]
 
@@ -21,7 +21,7 @@ foreach ($d in $dirsToCopy) {
   $s = Join-Path $Source $d
   if (Test-Path $s) {
     $t = Join-Path $Destination $d
-    $args = @($s,$t,'/E','/NFL','/NDL','/NJH','/NJS','/NP')
+    $args = @($s,$t,'/S','/NFL','/NDL','/NJH','/NJS','/NP')
     foreach ($xd in $excludeDirs) { $args += @('/XD',$xd) }
     foreach ($xf in $excludeFiles) { $args += @('/XF',$xf) }
     & robocopy @args | Out-Null
@@ -43,5 +43,15 @@ if (Test-Path $legacy) {
   $report.Add('Removed destination legacy backend: OnePadSchoolAI/backend')
 }
 
-$report | Set-Content -LiteralPath (Join-Path $Destination 'copy-report.txt')
-Write-Host 'Clean export completed. Review copy-report.txt and run validation commands.'
+# Prune empty directories after copy to keep repo lean
+Get-ChildItem -LiteralPath $Destination -Recurse -Directory -Force |
+  Sort-Object FullName -Descending |
+  ForEach-Object {
+    if ($_.Name -eq '.git') { return }
+    $children = Get-ChildItem -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
+    if ($null -eq $children -or $children.Count -eq 0) {
+      Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
+    }
+  }
+
+Write-Host 'Clean export completed. Validation checks are recommended before git add.'
