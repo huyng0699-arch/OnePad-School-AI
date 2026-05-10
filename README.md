@@ -20,8 +20,7 @@ Also see:
 - LICENSE
 - THIRD_PARTY_NOTICES.md
 - docs/license-and-ip-compliance.md
-- docs/installation-and-usage-guide.md
-- docs/app-capabilities-guide.md
+- TECHNICAL_REPRODUCIBILITY_REPORT.md
 
 ## Project Overview
 
@@ -123,5 +122,6 @@ Google/Gemma/Cactus names, trademarks, and model files remain subject to their r
 
 Backend nightly reports may use `template_fallback` unless local Gemma/Cactus runtime is connected in the backend process.
 Do not overclaim local Gemma in backend nightly unless it is actually connected.
+
 
 
