@@ -1,4 +1,4 @@
-﻿import { Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { PermissionService } from "../authz/permission.service";
 import { AiAuthoringProviderService } from "../ai-authoring/ai-authoring-provider.service";
@@ -359,10 +359,10 @@ export class StudentTrendsService {
     });
 
     const recommendation = await this.generateRecommendation(packet);
-    const title = recommendation.title || (redAlert ? "RED ALERT: wellbeing and learning trend requires attention" : "Wellbeing & Learning trend update");
+    const title = recommendation.title || (redAlert ? "Cần phối hợp hỗ trợ học sinh" : "Tình hình học tập và sinh hoạt cần theo dõi");
     const summary = recommendation.summary || (redAlert
-      ? "Multiple signals are elevated across at least one category. Please review the vault and coordinate support."
-      : "Nightly trend generated from safe school signals across learning, wellbeing, physical, conversation, and teacher/parent categories.");
+      ? "Một số tín hiệu học tập hoặc sinh hoạt đang tăng. Phụ huynh nên kiểm tra nhẹ nhàng và phối hợp với nhà trường nếu tình trạng tiếp diễn."
+      : "Backend đã tạo tóm tắt an toàn từ dữ liệu học tập, sinh hoạt và hỗ trợ của học sinh.");
 
     const report = await this.prisma.studentTrendReport.create({
       data: {
@@ -388,7 +388,7 @@ export class StudentTrendsService {
     return { ok: true, packet: latest?.packetJson ? JSON.parse(latest.packetJson) : null, snapshot: latest ?? null };
   }
 
-  async getParentTrendReport(studentId: string, actor: any) {
+  async getParentTrendReport(studentId: string, actor: any): Promise<any> {
     await this.authz.assertCanViewParentChild(actor, studentId);
     const [report, latest, student] = await Promise.all([
       this.prisma.studentTrendReport.findFirst({ where: { studentId, audience: "parent" }, orderBy: { generatedAt: "desc" } }),
@@ -396,7 +396,10 @@ export class StudentTrendsService {
       this.prisma.student.findUnique({ where: { id: studentId } }),
     ]);
     await this.authz.writeAccessAuditLog(actor, "read_parent_trend_report", "student", studentId, "parent_trend_report");
-    if (!report || !latest) return { ok: false, error: "report_not_found" };
+    if (!report || !latest) {
+      await this.evaluateAndSave(studentId, "live_backend");
+      return this.getParentTrendReport(studentId, actor);
+    }
 
     const packet = JSON.parse(latest.packetJson || "{}");
     const chartResp = await this.getParentTrendChart(studentId, actor, 14);
@@ -421,8 +424,7 @@ export class StudentTrendsService {
       },
       latestSummary: packet.negativeSummary || { totalDeduction: latest.totalDeduction, level: latest.level, items: [] },
       generatedAt: report.generatedAt.toISOString(),
-      provider: (report.provider || "template_fallback") as ProviderType,
-      source: (report.source || latest.source || "demo_seed") as SourceType,
+      dataMode: "backend",
       direction: packet.direction || "stable",
       reportId: report.id,
     };
@@ -448,8 +450,9 @@ export class StudentTrendsService {
         studyLoadDeduction: row.studyLoadDeduction,
         learningBehaviorDeduction: row.learningBehaviorDeduction,
         supportSignalDeduction: row.supportSignalDeduction,
+        label: row.level === "red" || row.level === "high" ? "Cần theo dõi sát" : row.level === "watch" || row.level === "elevated" ? "Cần theo dõi" : "Ổn định",
       })),
-      source: rows.length > 0 ? "live_backend" : "demo_seed",
+      dataMode: "backend",
     };
   }
 

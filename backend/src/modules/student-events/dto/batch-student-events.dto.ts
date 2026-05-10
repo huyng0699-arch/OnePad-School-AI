@@ -3,20 +3,37 @@ import { Type } from "class-transformer";
 
 export const STUDENT_EVENT_TYPES = [
   "lesson_started",
+  "lesson_opened",
+  "page_read",
   "lesson_completed",
+  "lesson_reviewed",
   "ai_tutor_used",
+  "ai_tutor_message_sent",
+  "ai_tutor_response_received",
   "quiz_started",
   "quiz_completed",
   "short_answer_submitted",
   "adaptive_level_changed",
   "group_work_activity",
   "collaboration_activity",
+  "assignment_opened",
+  "assignment_started",
   "assignment_submitted",
+  "assignment_completed",
+  "assignment_overdue",
+  "ar_lesson_opened",
+  "ar_lesson_completed",
+  "ar_quiz_completed",
   "support_requested",
   "teacher_help_requested",
   "wellbeing_check_in",
+  "wellbeing_signal_received",
   "low_confidence_signal",
   "frustration_signal",
+  "attendance_marked",
+  "attendance_absent",
+  "attendance_late",
+  "device_sync",
   "local_ai_used",
   "cloud_ai_used",
 ] as const;
@@ -26,8 +43,12 @@ export const STUDENT_EVENT_SOURCES = [
   "ai_tutor",
   "quiz",
   "progress",
+  "assignment",
   "support",
   "group_work",
+  "attendance",
+  "device",
+  "timetable",
   "voice_command",
   "local_ai",
   "cloud_ai",
@@ -57,7 +78,7 @@ export class StudentEventDto {
   source!: string;
 
   @IsOptional()
-  @IsIn(["low", "medium", "high"])
+  @IsIn(["low", "medium", "high", "urgent"])
   severity?: string;
 
   @IsOptional()

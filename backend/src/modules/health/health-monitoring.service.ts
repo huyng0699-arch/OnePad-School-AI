@@ -276,20 +276,43 @@ export class HealthMonitoringService {
   }
 
   async getParentHealthWellbeingVault(studentId: string) {
-    const [summary, signals] = await Promise.all([
+    const [summary, signals, auditLogs] = await Promise.all([
       this.getStudentHealthSummary(studentId),
       this.getStudentWellbeingSignals(studentId),
+      this.prisma.accessAuditLog.findMany({
+        where: { resourceId: studentId },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
     ]);
+
+    const latestLog = summary.logs[summary.logs.length - 1];
+    const latestAlert = summary.alerts[0];
+
     return {
       ok: true,
       vault: {
         childId: studentId,
+        activitySummary: latestLog?.activeMinutes
+          ? `Vận động gần nhất khoảng ${latestLog.activeMinutes} phút.`
+          : "Backend chưa nhận dữ liệu vận động từ Student App/thiết bị.",
+        sleepRoutine: latestLog?.sleepHours
+          ? `Giấc ngủ gần nhất khoảng ${latestLog.sleepHours} giờ.`
+          : "Backend chưa nhận dữ liệu giấc ngủ.",
+        learningStress: signals.signals.length > 0
+          ? signals.signals[0].safeSummary
+          : latestAlert?.safeSummary || "Chưa có tín hiệu áp lực học tập cần can thiệp.",
+        sharingStatus: "Phụ huynh kiểm soát chia sẻ; giáo viên chỉ xem tóm tắt khi được cho phép.",
+        accessHistory: auditLogs.map((log) => ({
+          date: log.createdAt,
+          actor: `${log.actorRole}:${log.actorUserId}`,
+          action: log.action,
+        })),
         readiness: { level: summary.readinessLevel, safeSummary: summary.safeSummary },
         wellbeingSummary: signals.signals.length > 0 ? signals.signals[0].safeSummary : "No active wellbeing signal.",
         supportSignals: signals.signals,
         alerts: summary.alerts,
         generatedAt: new Date().toISOString(),
-        source: "live_backend",
       },
     };
   }

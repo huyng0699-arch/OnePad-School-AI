@@ -1,50 +1,19 @@
-﻿import Link from "next/link";
-import { onepadApi } from "../../lib/api";
+export const dynamic = "force-dynamic";
 
-const STUDENT_ID = "stu_003";
-
-function sourceLabel(source: string) {
-  if (source === "live_backend") return "LIVE BACKEND";
-  if (source === "local_cache") return "LOCAL CACHE";
-  if (source === "demo_encrypted") return "DEMO ENCRYPTED DATA";
-  return "DEMO DATA";
-}
-
-function providerLabel(provider: string) {
-  if (provider === "gemma_local_cactus") return "GEMMA LOCAL";
-  if (provider === "backend_cloud") return "BACKEND CLOUD";
-  return "TEMPLATE FALLBACK";
-}
+import Link from "next/link";
+import ParentShell from "../../components/ParentShell";
+import { formatDate, levelLabel, onepadApi } from "../../lib/api";
 
 export default async function ParentSupportPage() {
-  const [trend, health] = await Promise.all([
-    onepadApi.getChildTrendReport(STUDENT_ID),
-    onepadApi.parentAlerts(STUDENT_ID),
-  ]);
+  const [trend, alerts] = await Promise.all([onepadApi.getChildTrendReport(), onepadApi.parentAlerts()]);
+  const alertList = Array.isArray(alerts.alerts) ? alerts.alerts : [];
+  const supportNeeded = trend.level === "urgent" || trend.level === "attention" || trend.level === "monitor" || alertList.length > 0;
 
   return (
-    <div className="shell"><main className="main">
-      <section className="section card solid">
-        <h3>Parent Support</h3>
-        {(trend.redAlert || trend.level === "high" || trend.level === "red") ? (
-          <div className="callout" style={{ border: "1px solid #ef4444" }}>
-            <p><b>{trend.redAlert ? "RED ALERT" : "HIGH PRIORITY"}</b> · {trend.title}</p>
-            <p>{trend.summary}</p>
-            <p>{(trend.keyFactors || []).join(" · ")}</p>
-            <ul>{(trend.suggestedActions || []).map((a: string) => <li key={a}>{a}</li>)}</ul>
-            <p>{sourceLabel(trend.source)} · {providerLabel(trend.provider)}</p>
-            <Link className="button-link" href="/health-wellbeing-vault">Open Vault</Link>
-          </div>
-        ) : <p>Monitoring mode: no high/red support item.</p>}
-      </section>
-
-      <section className="section card solid">
-        <h3>Health alerts</h3>
-        {(health.alerts || []).slice(0, 5).map((a: any) => (
-          <div className="timeline-item" key={a.id}><strong>{String(a.level).toUpperCase()}</strong><p>{a.safeSummary || a.summary}</p></div>
-        ))}
-      </section>
-    </main></div>
+    <ParentShell>
+      <section className="section card solid"><div className="section-title"><div><h2>Parent Support</h2><p>What parents can do at home and when to contact school.</p></div><span className="badge amber">{supportNeeded ? "Review needed" : "Stable"}</span></div></section>
+      <section className="section card solid"><h3>{levelLabel(trend.level)}</h3><p>{trend.summary}</p><div className="care-grid section">{trend.suggestedActions.length ? trend.suggestedActions.map((action) => <div key={action}><span className="care-kicker">Action</span><strong>{action}</strong><p>Keep it calm, concrete, and low-pressure.</p></div>) : <div><span className="care-kicker">Backend</span><strong>No parent action returned yet</strong><p>Home support actions will appear here.</p></div>}</div><div className="pill-row section"><Link className="button-link" href="/messages">Message teacher</Link><Link className="button-link" href="/home-support-plan">Home Support Plan</Link></div></section>
+      <section className="section card solid"><h3>Signals to monitor</h3>{alertList.length ? alertList.map((alert) => <div className="timeline-item" key={alert.id}><span>{levelLabel(alert.level)} · {formatDate(alert.createdAt)}</span><strong>{alert.title}</strong><p>{alert.summary}</p><small>{alert.recommendedAction}</small></div>) : <p>Backend has not returned monitor signals yet.</p>}</section>
+    </ParentShell>
   );
 }
-

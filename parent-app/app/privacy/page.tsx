@@ -1,5 +1,16 @@
-﻿export default function ParentPrivacyPage() {
-  return <div className="shell"><main className="main"><section className="hero"><div className="hero-top"><div><div className="kicker">Privacy Center</div><h2>Privacy Center</h2><p>Control what parents, teachers, and school roles can access.</p></div></div></section>
-  <section className="section grid cols-2"><div className="card solid"><h3>Parent can see</h3><p>Learning summary, trend report, safe health/wellbeing vault, and consent history.</p></div><div className="card solid"><h3>Teacher can see with consent</h3><p>Learning-safe and wellbeing-safe summaries for support coordination.</p></div><div className="card solid"><h3>School admins can see</h3><p>Aggregate counts, policy, audit logs, and trend oversight.</p></div><div className="card solid"><h3>Still restricted</h3><p>Raw private reflections and raw chat content stay hidden.</p></div></section>
-  <section className="section card solid"><h3>Manage Consent</h3><div className="pill-row section"><a className="badge" href="/consent-sharing">Open consent sharing</a></div></section></main></div>;
+export const dynamic = "force-dynamic";
+
+import ParentShell from "../../components/ParentShell";
+import { onepadApi } from "../../lib/api";
+
+export default async function ParentPrivacyPage() {
+  const response = await onepadApi.privacyCenter() as any;
+  const privacy = Array.isArray(response.privacy) ? response.privacy : [];
+
+  return (
+    <ParentShell>
+      <section className="section card solid parent-home-intro"><h2>Privacy Center</h2><p>What parents, teachers, and school admins can see. Raw chat, hidden internal scores, and raw health data remain protected by default.</p></section>
+      <section className="section grid cols-2">{privacy.length ? privacy.map((row: any) => <div className="card solid" key={row.role}><h3>{row.role}</h3><p>{row.canSee}</p></div>) : <div className="card solid"><h3>No privacy policy returned yet</h3><p>Backend should return parent, teacher, school-admin, and never-shared views.</p></div>}</section>
+    </ParentShell>
+  );
 }
