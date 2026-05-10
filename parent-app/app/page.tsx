@@ -17,11 +17,19 @@ function providerLabel(provider: string) {
 }
 
 export default async function ParentPage() {
-  const trend = await onepadApi.getChildTrendReport(STUDENT_ID);
+  const [trend, chart] = await Promise.all([
+    onepadApi.getChildTrendReport(STUDENT_ID),
+    onepadApi.getChildTrendChart(STUDENT_ID, 7),
+  ]);
   const redCard = trend.redAlert || trend.level === "red";
 
   return (
     <div className="shell"><main className="main">
+      <section className="section card solid">
+        <h2>Parent Home</h2>
+        <p>Student-focused dashboard for daily wellbeing, learning trend, and support actions.</p>
+      </section>
+
       <section className="section card solid">
         <h3>Wellbeing & Learning Trend</h3>
         <p><b>Status:</b> {trend.level} · <b>Direction:</b> {trend.direction || trend.latestSummary?.direction || "stable"}</p>
@@ -35,6 +43,31 @@ export default async function ParentPage() {
           {(trend.level === "high" || trend.level === "red" || trend.redAlert)
             ? <Link className="button-link" href="/support">Open Parent Support</Link>
             : null}
+        </div>
+      </section>
+
+      <section className="section card solid">
+        <h3>7-day trend preview</h3>
+        <div className="timeline-grid">
+          {(chart.points || []).map((p: any) => (
+            <div className="timeline-item" key={p.date}>
+              <strong>{p.date}</strong>
+              <p>{p.totalDeduction} ({p.level})</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section grid cols-2">
+        <div className="card solid">
+          <h3>Health & Wellbeing Vault</h3>
+          <p>Open detailed trend history, category breakdown, and recommendation context.</p>
+          <Link className="button-link" href="/health-wellbeing-vault">Open Vault</Link>
+        </div>
+        <div className="card solid">
+          <h3>Parent Support</h3>
+          <p>Check support priority, suggested actions, and safe summaries.</p>
+          <Link className="button-link" href="/support">Open Support</Link>
         </div>
       </section>
     </main></div>
