@@ -1,6 +1,6 @@
-export type VoiceEngine = 'gemma_audio' | 'whisper_transcription';
+export type VoiceEngine = 'gemma_audio' | 'cloud_audio' | 'whisper_transcription';
 
-export type VoiceState = 'idle' | 'listening' | 'hearing_speech' | 'processing' | 'ready' | 'error';
+export type VoiceState = 'idle' | 'listening' | 'hearing_speech' | 'transcribing' | 'routing' | 'processing' | 'ready' | 'error';
 
 export type VoiceCommandIntent =
   | 'open_lesson'
@@ -37,10 +37,27 @@ export type WhisperModelStatus = 'not_downloaded' | 'downloading' | 'ready' | 'e
 
 export type GemmaAudioStatus = 'ready' | 'not_available' | 'error';
 
+export type CloudAudioStatus = 'ready' | 'not_configured' | 'error';
+
+export type VoiceTurnContext = {
+  currentScreen: string;
+  currentLessonTitle?: string;
+  currentPageNumber?: number;
+};
+
+export type VoiceUnderstandingResult = {
+  transcript: string;
+  source: VoiceEngine;
+  confidence?: number;
+  latencyMs: number;
+  language?: string;
+  directCommand?: VoiceCommandResult;
+};
+
 export type VoiceControllerSnapshot = {
   state: VoiceState;
   engine: VoiceEngine;
-  engineStatus: WhisperModelStatus | GemmaAudioStatus;
+  engineStatus: WhisperModelStatus | GemmaAudioStatus | CloudAudioStatus;
   lastTranscript: string;
   lastDetectedAction: string;
   lastConfidence: number;

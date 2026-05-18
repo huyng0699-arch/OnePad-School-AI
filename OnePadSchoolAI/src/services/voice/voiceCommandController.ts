@@ -1,13 +1,12 @@
 import { audioCaptureService } from './audioCaptureService';
 import { buildAudioSegment } from './audioSegmentBuilder';
-import { getGemmaAudioStatus, processAudioSegment } from './cactusGemmaAudioService';
+import { getCloudAudioStatus } from './cloudAudioService';
+import { getGemmaAudioStatus } from './cactusGemmaAudioService';
 import { getSelectedVoiceEngine, setSelectedVoiceEngine } from './voiceEngineSettings';
-import { inferIntentFromTranscript } from './voiceCommandRouter';
-import type { VoiceControllerSnapshot, VoiceEngine } from './voiceTypes';
+import type { VoiceControllerSnapshot, VoiceEngine, VoiceTurnContext } from './voiceTypes';
 import { checkModelStatus } from './whisperModelDownloadService';
-import { transcribeAudioSegment } from './whisperTranscriptionService';
 import { VadTurnDetector } from './vadTurnDetector';
-import { listenWithWhisperOnce } from '../whisperVoiceService';
+import { resolveVoiceCommand, understandVoiceTurn } from './voiceUnderstandingPipeline';
 
 type Listener = (snapshot: VoiceControllerSnapshot) => void;
 
@@ -25,6 +24,7 @@ class VoiceCommandController {
   private vad = new VadTurnDetector();
   private unsubFrame: (() => void) | null = null;
   private listeningStartedAt = 0;
+  private activeRunId = 0;
 
   constructor() {
     void this.init();
@@ -42,7 +42,7 @@ class VoiceCommandController {
     const engine = await getSelectedVoiceEngine();
     const whisper = await checkModelStatus();
     this.snapshot.engine = engine;
-    this.snapshot.engineStatus = engine === 'gemma_audio' ? getGemmaAudioStatus() : whisper;
+    this.snapshot.engineStatus = this.getEngineStatus(engine, whisper);
     this.emit();
   }
 
@@ -61,7 +61,7 @@ class VoiceCommandController {
     const whisper = await checkModelStatus();
     this.patch({
       engine,
-      engineStatus: engine === 'gemma_audio' ? getGemmaAudioStatus() : whisper
+      engineStatus: this.getEngineStatus(engine, whisper)
     });
   }
 
@@ -69,16 +69,38 @@ class VoiceCommandController {
     return this.snapshot.engine;
   }
 
-  async startListening(): Promise<void> {
+  async startListening(context?: Partial<VoiceTurnContext>): Promise<void> {
+    const runId = ++this.activeRunId;
     this.listeningStartedAt = Date.now();
-    this.patch({ state: 'listening', lastError: undefined });
+    this.patch({ state: 'listening', lastError: undefined, lastTranscript: '', lastDetectedAction: '', lastConfidence: 0 });
+
+    if (this.snapshot.engine === 'whisper_transcription') {
+      await this.processVoiceTurn(runId, null, this.normalizeContext(context));
+      return;
+    }
+
+    if (this.snapshot.engine === 'gemma_audio' && getGemmaAudioStatus() !== 'ready') {
+      this.patch({ state: 'error', engineStatus: getGemmaAudioStatus(), lastError: 'Local AI audio understanding is not available in this build.' });
+      return;
+    }
+
+    if (this.snapshot.engine === 'cloud_audio' && getCloudAudioStatus() !== 'ready') {
+      this.patch({ state: 'error', engineStatus: getCloudAudioStatus(), lastError: 'Cloud audio understanding is not configured in this build.' });
+      return;
+    }
+
     this.vad.reset();
     this.unsubFrame?.();
     this.unsubFrame = audioCaptureService.subscribeFrame((frame) => this.vad.onFrame(frame));
     await audioCaptureService.start();
   }
 
-  async stopListening(context?: { currentScreen: string; currentLessonTitle?: string; currentPageNumber?: number }): Promise<void> {
+  async stopListening(context?: Partial<VoiceTurnContext>): Promise<void> {
+    if (this.snapshot.engine === 'whisper_transcription') {
+      return;
+    }
+
+    const runId = ++this.activeRunId;
     const stopped = await audioCaptureService.stop();
     this.unsubFrame?.();
     this.unsubFrame = null;
@@ -88,47 +110,35 @@ class VoiceCommandController {
       return;
     }
 
-    const processStartedAt = Date.now();
-    this.patch({ state: 'processing' });
+    await this.processVoiceTurn(runId, segment, this.normalizeContext(context));
+  }
 
+  private async processVoiceTurn(runId: number, segment: ReturnType<typeof buildAudioSegment>, context: VoiceTurnContext): Promise<void> {
     try {
-      if (this.snapshot.engine === 'gemma_audio') {
-        const result = await processAudioSegment(segment);
-        this.patch({
-          state: 'ready',
-          engineStatus: getGemmaAudioStatus(),
-          lastTranscript: result.transcript,
-          lastDetectedAction: result.intent,
-          lastConfidence: result.confidence,
-          lastLatencyMs: Date.now() - this.listeningStartedAt
-        });
+      this.patch({ state: this.snapshot.engine === 'whisper_transcription' ? 'transcribing' : 'processing' });
+      const understanding = await understandVoiceTurn({
+        engine: this.snapshot.engine,
+        segment: segment ?? undefined,
+        context
+      });
+      if (runId !== this.activeRunId) {
         return;
       }
 
-      const listen = await listenWithWhisperOnce(9000);
-      if (!listen.ok || !listen.transcript?.trim()) {
-        this.patch({ state: 'listening' });
+      this.patch({ state: 'routing', lastTranscript: understanding.transcript });
+      const result = await resolveVoiceCommand(understanding, context);
+      if (runId !== this.activeRunId) {
         return;
       }
-      const transcription = { transcript: listen.transcript };
-
-      const result = await inferIntentFromTranscript(
-        transcription.transcript,
-        context?.currentScreen ?? 'home',
-        context?.currentLessonTitle,
-        context?.currentPageNumber
-      );
 
       this.patch({
         state: 'ready',
-        engineStatus: await checkModelStatus(),
+        engineStatus: this.getEngineStatus(this.snapshot.engine, await checkModelStatus()),
         lastTranscript: result.transcript,
         lastDetectedAction: result.intent,
         lastConfidence: result.confidence,
         lastLatencyMs: Date.now() - this.listeningStartedAt
       });
-
-      void processStartedAt;
     } catch (error) {
       this.patch({
         state: 'error',
@@ -139,10 +149,25 @@ class VoiceCommandController {
   }
 
   async cancel(): Promise<void> {
+    this.activeRunId += 1;
     await audioCaptureService.stop();
     this.unsubFrame?.();
     this.unsubFrame = null;
     this.patch({ state: 'idle' });
+  }
+
+  private normalizeContext(context?: Partial<VoiceTurnContext>): VoiceTurnContext {
+    return {
+      currentScreen: context?.currentScreen ?? 'home',
+      currentLessonTitle: context?.currentLessonTitle,
+      currentPageNumber: context?.currentPageNumber
+    };
+  }
+
+  private getEngineStatus(engine: VoiceEngine, whisperStatus: VoiceControllerSnapshot['engineStatus']): VoiceControllerSnapshot['engineStatus'] {
+    if (engine === 'gemma_audio') return getGemmaAudioStatus();
+    if (engine === 'cloud_audio') return getCloudAudioStatus();
+    return whisperStatus;
   }
 
   private patch(next: Partial<VoiceControllerSnapshot>): void {

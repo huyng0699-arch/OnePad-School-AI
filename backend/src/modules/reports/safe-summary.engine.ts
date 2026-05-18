@@ -62,6 +62,56 @@ export class SafeSummaryEngine {
       };
     }
 
+    if (["learning_decline_signal", "low_confidence_signal", "frustration_signal"].includes(event.type)) {
+      return {
+        teacherSummary: "Student learning pattern needs support. Use a short check-in and review the recent activity.",
+        parentSummary: "Your child may benefit from a calm, short review routine at home.",
+        adminSummary: "Learning support pattern recorded from Student App.",
+        recommendedTeacherAction: "Check the latest lesson/quiz evidence and offer focused support.",
+        recommendedParentAction: "Ask what felt difficult and keep the review short.",
+      };
+    }
+
+    if (["health_signal_received", "wellbeing_signal_received", "urgent_safety_signal"].includes(event.type)) {
+      return {
+        teacherSummary: "Parent-safe wellbeing support signal is available. Do not infer diagnosis from this summary.",
+        parentSummary: "A wellbeing or routine signal was recorded. Use a gentle check-in and review the health vault.",
+        adminSummary: "Wellbeing/health support signal recorded.",
+        recommendedTeacherAction: "Follow school support protocol if signals repeat or severity is high.",
+        recommendedParentAction: "Use a calm check-in and keep routine steady.",
+      };
+    }
+
+    if (event.type === "social_integration_signal") {
+      return {
+        teacherSummary: "Student social participation signal recorded. Consider light group-work support.",
+        parentSummary: "A safe social participation update was recorded from school activity.",
+        adminSummary: "Social integration signal recorded.",
+        recommendedTeacherAction: "Review group participation and assign supportive roles if needed.",
+        recommendedParentAction: "Ask about group work without pressure.",
+      };
+    }
+
+    if (event.type.startsWith("ar_")) {
+      return {
+        teacherSummary: "Student AR learning activity was recorded.",
+        parentSummary: "Your child used an AR learning activity.",
+        adminSummary: "AR learning activity recorded.",
+        recommendedTeacherAction: "Review AR progress if connected to an assignment.",
+        recommendedParentAction: "Ask the child to explain what they observed.",
+      };
+    }
+
+    if (event.type.startsWith("transcript_")) {
+      return {
+        teacherSummary: "Student lecture transcript tool activity was recorded.",
+        parentSummary: "Your child used a study support tool for lecture notes.",
+        adminSummary: "Transcript study tool activity recorded.",
+        recommendedTeacherAction: "No immediate action required.",
+        recommendedParentAction: "Ask the child for one key point from the notes.",
+      };
+    }
+
     if (event.type === "group_work_activity" || event.type === "collaboration_activity") {
       return {
         teacherSummary: "Student participated in group work activity.",

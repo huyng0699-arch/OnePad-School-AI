@@ -1,4 +1,5 @@
 import { getPendingEvents, getQueueStats, markEventFailed, markEventsSynced } from './studentEventQueue';
+import { refreshStudentIdentityFromBootstrap } from './studentIdentityService';
 import { studentSyncClient } from './studentSyncClient';
 
 type SyncState = { state: 'idle' | 'syncing' | 'error'; pending: number; lastSyncedAt?: string; error?: string };
@@ -45,6 +46,7 @@ export function scheduleSyncSoon(ms = 1500) {
 }
 
 export async function initializeSyncService() {
+  await refreshStudentIdentityFromBootstrap();
   await emit({ state: 'idle' });
   scheduleSyncSoon(1000);
 }

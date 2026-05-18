@@ -1,15 +1,16 @@
 import { getOrCreateDeviceId, getSessionId } from './deviceIdentityService';
+import { getStudentIdentity } from './studentIdentityService';
 import { enqueueEvent } from './studentEventQueue';
 import { scheduleSyncSoon } from './studentSyncService';
 import { StudentEvent, StudentEventSource, StudentEventType } from './studentEventTypes';
 
-const DEMO_STUDENT_ID = 'stu_001';
 const mkId = (type: string) => `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 async function push(type: StudentEventType, source: StudentEventSource, payload: Partial<StudentEvent>) {
+  const identity = await getStudentIdentity();
   const event: StudentEvent = {
     id: mkId(type),
-    studentId: DEMO_STUDENT_ID,
+    studentId: identity.studentId,
     deviceId: await getOrCreateDeviceId(),
     sessionId: await getSessionId(),
     type,

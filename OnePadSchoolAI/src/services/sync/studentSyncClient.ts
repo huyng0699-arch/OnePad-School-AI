@@ -1,11 +1,18 @@
 import { getBackendBaseUrl } from './syncConfig';
+import { getOrCreateDeviceId, getSessionId } from './deviceIdentityService';
+import { buildStudentAuthHeaders, getStudentIdentity } from './studentIdentityService';
 import { StudentEvent } from './studentEventTypes';
 
 async function safeFetch(path: string, init?: RequestInit) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12000);
-    const response = await fetch(`${getBackendBaseUrl()}${path}`, { ...init, signal: controller.signal });
+    const authHeaders = await buildStudentAuthHeaders();
+    const response = await fetch(`${getBackendBaseUrl()}${path}`, {
+      ...init,
+      headers: { ...authHeaders, ...(init?.headers ?? {}) },
+      signal: controller.signal
+    });
     clearTimeout(timeout);
     const json = await response.json().catch(() => null);
     return { ok: response.ok, status: response.status, data: json };
@@ -14,11 +21,49 @@ async function safeFetch(path: string, init?: RequestInit) {
   }
 }
 
+function normalizeEventForSchoolBackend(event: StudentEvent) {
+  return {
+    id: event.id,
+    studentId: event.studentId,
+    deviceId: event.deviceId,
+    sessionId: event.sessionId,
+    type: event.type,
+    source: event.source,
+    severity: event.severity,
+    lessonId: event.lessonId,
+    pageNumber: typeof event.metadataJson?.pageNumber === 'number' ? event.metadataJson.pageNumber : undefined,
+    assignmentId: event.assignmentId,
+    quizId: event.quizId,
+    groupWorkId: event.arAssignmentId,
+    safeSummary: event.safeSummary,
+    metadata: {
+      ...(event.metadataJson ?? {}),
+      arAssignmentId: event.arAssignmentId
+    },
+    rawPrivateText: event.rawPrivateText,
+    privacyLevel: event.privacyLevel,
+    createdAt: event.createdAt
+  };
+}
+
 export const studentSyncClient = {
-  postStudentEventsBatch(events: StudentEvent[]) {
-    return safeFetch('/v1/student/events/batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ events }) });
+  async postStudentEventsBatch(events: StudentEvent[]) {
+    const deviceId = await getOrCreateDeviceId();
+    const sessionId = await getSessionId();
+    return safeFetch('/v1/student/events/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deviceId,
+        sessionId,
+        events: events.map(normalizeEventForSchoolBackend)
+      })
+    });
   },
-  getStudentBootstrap: () => safeFetch('/v1/student/bootstrap'),
+  getStudentBootstrap: async () => {
+    const identity = await getStudentIdentity();
+    return safeFetch(`/v1/student/bootstrap?studentId=${encodeURIComponent(identity.studentId)}`);
+  },
   getStudentArAssignments: () => safeFetch('/v1/student/ar-assignments'),
   markArAssignmentOpened: (id: string) => safeFetch(`/v1/student/ar-assignments/${id}/opened`, { method: 'POST' }),
   markArAssignmentCompleted: (id: string) => safeFetch(`/v1/student/ar-assignments/${id}/completed`, { method: 'POST' }),

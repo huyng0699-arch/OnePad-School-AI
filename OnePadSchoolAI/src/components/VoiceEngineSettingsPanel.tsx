@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { voiceCommandController } from '../services/voice/voiceCommandController';
+import { getCloudAudioStatus } from '../services/voice/cloudAudioService';
 import { getGemmaAudioStatus } from '../services/voice/cactusGemmaAudioService';
 import { checkModelStatus, deleteModel, downloadModel, getStorageUsed, subscribeDownloadProgress } from '../services/voice/whisperModelDownloadService';
 import type { VoiceEngine } from '../services/voice/voiceTypes';
@@ -39,14 +40,21 @@ export default function VoiceEngineSettingsPanel() {
       <Pressable style={[styles.radio, snapshot.engine === 'gemma_audio' ? styles.active : null]} onPress={() => void choose('gemma_audio')}>
         <Text style={styles.radioTitle}>AI Voice Understanding</Text>
         <Text style={styles.meta}>Uses local Gemma audio understanding through Cactus when available.</Text>
-        <Text style={styles.meta}>Mic ? VAD ? Gemma 4 audio ? intent/action</Text>
+        <Text style={styles.meta}>Mic to VAD to local audio AI to intent/action</Text>
         <Text style={styles.meta}>Status: {getGemmaAudioStatus() === 'not_available' ? 'Not available' : 'Ready'}</Text>
+      </Pressable>
+
+      <Pressable style={[styles.radio, snapshot.engine === 'cloud_audio' ? styles.active : null]} onPress={() => void choose('cloud_audio')}>
+        <Text style={styles.radioTitle}>Cloud Audio Understanding</Text>
+        <Text style={styles.meta}>Sends the captured voice turn to a configured cloud audio model when enabled.</Text>
+        <Text style={styles.meta}>Mic to VAD to cloud audio AI to intent/action</Text>
+        <Text style={styles.meta}>Status: {getCloudAudioStatus() === 'not_configured' ? 'Not configured' : 'Ready'}</Text>
       </Pressable>
 
       <Pressable style={[styles.radio, snapshot.engine === 'whisper_transcription' ? styles.active : null]} onPress={() => void choose('whisper_transcription')}>
         <Text style={styles.radioTitle}>Whisper Transcription</Text>
         <Text style={styles.meta}>Uses local Whisper to convert speech to text, then routes the transcript to the app command system.</Text>
-        <Text style={styles.meta}>Mic ? VAD ? Whisper ? transcript ? command router</Text>
+        <Text style={styles.meta}>Mic to Whisper to transcript to command router to action</Text>
         <Text style={styles.meta}>Status: {snapshot.engine === 'whisper_transcription' ? snapshot.engineStatus : 'Not downloaded'}</Text>
       </Pressable>
 

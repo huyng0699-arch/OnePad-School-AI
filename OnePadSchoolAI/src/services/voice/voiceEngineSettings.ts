@@ -6,7 +6,7 @@ const KEY = 'onepad.voice.engine';
 export async function getSelectedVoiceEngine(): Promise<VoiceEngine> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    if (raw === 'gemma_audio' || raw === 'whisper_transcription') return raw;
+    if (raw === 'gemma_audio' || raw === 'cloud_audio' || raw === 'whisper_transcription') return raw;
   } catch {
     // ignore
   }

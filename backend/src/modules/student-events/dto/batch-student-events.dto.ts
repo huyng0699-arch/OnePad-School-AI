@@ -21,9 +21,19 @@ export const STUDENT_EVENT_TYPES = [
   "assignment_submitted",
   "assignment_completed",
   "assignment_overdue",
+  "learning_decline_signal",
+  "health_signal_received",
+  "social_integration_signal",
+  "urgent_safety_signal",
+  "ar_assignment_received",
+  "ar_assignment_opened",
+  "ar_assignment_completed",
+  "ar_model_explained",
   "ar_lesson_opened",
   "ar_lesson_completed",
   "ar_quiz_completed",
+  "transcript_summarized",
+  "transcript_quiz_created",
   "support_requested",
   "teacher_help_requested",
   "wellbeing_check_in",
@@ -36,6 +46,7 @@ export const STUDENT_EVENT_TYPES = [
   "device_sync",
   "local_ai_used",
   "cloud_ai_used",
+  "voice_command_used",
 ] as const;
 
 export const STUDENT_EVENT_SOURCES = [
@@ -54,6 +65,12 @@ export const STUDENT_EVENT_SOURCES = [
   "cloud_ai",
   "lecture_recorder",
   "ar_lab",
+  "smartwatch",
+  "health_app",
+  "backend_rule",
+  "local_ai_signal_engine",
+  "parent_app",
+  "teacher_app",
 ] as const;
 
 export class StudentEventDto {
@@ -120,9 +137,11 @@ export class StudentEventDto {
 }
 
 export class BatchStudentEventsDto {
+  @IsOptional()
   @IsString()
   deviceId!: string;
 
+  @IsOptional()
   @IsString()
   sessionId!: string;
 

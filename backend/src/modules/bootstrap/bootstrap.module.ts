@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
+import { PrismaModule } from "../../prisma/prisma.module";
 import { BootstrapController } from "./bootstrap.controller";
 
-@Module({ controllers: [BootstrapController] })
+@Module({ imports: [PrismaModule], controllers: [BootstrapController] })
 export class BootstrapModule {}

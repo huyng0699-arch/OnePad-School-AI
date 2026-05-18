@@ -16,6 +16,10 @@ export class PermissionService {
 
   async assertCanViewClass(actor: DemoActor, classId: string) {
     if (actor.role === "school_admin") return true;
+    if (actor.role === "student") {
+      const student = await this.prisma.student.findUnique({ where: { id: actor.userId } });
+      if (student?.classId === classId) return true;
+    }
     if (actor.role === "subject_teacher" || actor.role === "homeroom_teacher") {
       const access = await this.prisma.teacherClassAccess.findFirst({
         where: { teacherId: actor.userId, classId },
@@ -99,4 +103,3 @@ export class PermissionService {
     });
   }
 }
-

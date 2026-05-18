@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { ReportsService } from "../reports/reports.service";
+import { StudentTrendsService } from "../student-trends/student-trends.service";
 import {
   BatchStudentEventsDto,
   STUDENT_EVENT_SOURCES,
@@ -29,6 +30,7 @@ export class StudentEventsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reports: ReportsService,
+    private readonly trends: StudentTrendsService,
   ) {}
 
   async acceptBatch(body: BatchStudentEventsDto) {
@@ -77,6 +79,17 @@ export class StudentEventsService {
     const studentIds = [...new Set(body.events.map((event) => event.studentId))];
     for (const studentId of studentIds) {
       await this.reports.rebuildReportsForStudent(studentId);
+      await this.trends.evaluateAndSave(studentId, "live_backend");
+      await this.prisma.accessAuditLog.create({
+        data: {
+          actorUserId: studentId,
+          actorRole: "student",
+          action: "student_event_batch_synced",
+          resourceType: "student",
+          resourceId: studentId,
+          reason: `accepted=${accepted.filter((id) => body.events.some((event) => event.id === id && event.studentId === studentId)).length}`,
+        },
+      });
     }
 
     await this.rebuildAggregatesForStudents(studentIds);
@@ -145,6 +158,75 @@ export class StudentEventsService {
     });
   }
 
+  private async upsertArAssignmentFromEvent(event: StudentEventDto, status: string) {
+    const arId = event.groupWorkId || String(event.metadata?.["arAssignmentId"] ?? "");
+    if (!arId) return;
+    const student = await this.prisma.student.findUnique({ where: { id: event.studentId } });
+    await this.prisma.assignment.upsert({
+      where: { id: arId },
+      update: { status },
+      create: {
+        id: arId,
+        studentId: event.studentId,
+        classId: student?.classId ?? null,
+        lessonId: event.lessonId || "lesson_demo_001",
+        title: `[AR] ${String(event.metadata?.["title"] ?? "Student AR activity")}`,
+        status,
+        dueDate: null,
+      },
+    });
+  }
+
+  private async createSupportSignal(event: StudentEventDto, reason: string) {
+    await this.prisma.supportRequest.create({
+      data: {
+        studentId: event.studentId,
+        reason,
+        safeSummary: event.safeSummary,
+        privacyLevel: event.privacyLevel,
+      },
+    });
+  }
+
+  private async createHealthAlert(event: StudentEventDto) {
+    if (!["medium", "high", "urgent"].includes(event.severity ?? "")) return;
+    const level = event.severity === "urgent" || event.severity === "high" ? "high" : "medium";
+    await this.prisma.childHealthAlert.create({
+      data: {
+        studentId: event.studentId,
+        level,
+        score: level === "high" ? 0.82 : 0.62,
+        confidence: 0.72,
+        trendWindowDays: 14,
+        triggeredSignalsJson: JSON.stringify([{ eventId: event.id, type: event.type, safeSummary: event.safeSummary }]),
+        safeSummary: event.safeSummary,
+        recommendedAction: level === "high"
+          ? "Coordinate a calm check-in and school support review."
+          : "Monitor the pattern and use a low-pressure support routine.",
+      },
+    });
+  }
+
+  private async materializeHealthMetric(event: StudentEventDto) {
+    const metadata = event.metadata ?? {};
+    const hasMetric = ["steps", "activeMinutes", "sleepMinutes", "restingHeartRate", "hrv", "bloodOxygen"].some((key) => metadata[key] != null);
+    if (!hasMetric) return;
+    await this.prisma.phoneHealthMetric.create({
+      data: {
+        studentId: event.studentId,
+        sourceApp: String(metadata["sourceApp"] ?? event.source),
+        capturedAt: event.createdAt ? new Date(event.createdAt) : new Date(),
+        steps: metadata["steps"] != null ? Number(metadata["steps"]) : null,
+        activeMinutes: metadata["activeMinutes"] != null ? Number(metadata["activeMinutes"]) : null,
+        sleepMinutes: metadata["sleepMinutes"] != null ? Number(metadata["sleepMinutes"]) : null,
+        restingHeartRate: metadata["restingHeartRate"] != null ? Number(metadata["restingHeartRate"]) : null,
+        hrv: metadata["hrv"] != null ? Number(metadata["hrv"]) : null,
+        bloodOxygen: metadata["bloodOxygen"] != null ? Number(metadata["bloodOxygen"]) : null,
+        metadataJson: JSON.stringify(metadata),
+      },
+    });
+  }
+
   private async materializeEvent(event: StudentEventDto) {
     const metadata = event.metadata ?? {};
 
@@ -196,14 +278,13 @@ export class StudentEventsService {
     }
 
     if (event.type === "support_requested" || event.type === "teacher_help_requested") {
-      await this.prisma.supportRequest.create({
-        data: {
-          studentId: event.studentId,
-          reason: String(metadata["reason"] ?? event.type),
-          safeSummary: event.safeSummary,
-          privacyLevel: event.privacyLevel,
-        },
-      });
+      await this.createSupportSignal(event, String(metadata["reason"] ?? event.type));
+    }
+
+    if (["low_confidence_signal", "frustration_signal", "wellbeing_signal_received", "learning_decline_signal", "health_signal_received", "social_integration_signal", "urgent_safety_signal"].includes(event.type)) {
+      await this.createSupportSignal(event, event.type);
+      await this.createHealthAlert(event);
+      await this.materializeHealthMetric(event);
     }
 
     if (["group_work_activity", "collaboration_activity", "assignment_submitted", "assignment_completed"].includes(event.type)) {
@@ -228,7 +309,17 @@ export class StudentEventsService {
       await this.updateAssignmentStatus(event, "overdue");
     }
 
-    if (["lesson_completed", "lesson_opened", "page_read", "ar_lesson_opened", "ar_lesson_completed"].includes(event.type)) {
+    if (event.type === "ar_assignment_received") {
+      await this.upsertArAssignmentFromEvent(event, "assigned");
+    }
+    if (event.type === "ar_assignment_opened") {
+      await this.upsertArAssignmentFromEvent(event, "in_progress");
+    }
+    if (event.type === "ar_assignment_completed") {
+      await this.upsertArAssignmentFromEvent(event, "submitted");
+    }
+
+    if (["lesson_completed", "lesson_opened", "page_read", "ar_lesson_opened", "ar_lesson_completed", "ar_assignment_opened", "ar_assignment_completed", "ar_model_explained", "transcript_summarized", "transcript_quiz_created"].includes(event.type)) {
       await this.upsertSafeSummary(event.studentId, "latest_learning_activity", event.safeSummary);
     }
 
@@ -236,7 +327,7 @@ export class StudentEventsService {
       await this.upsertSafeSummary(event.studentId, "latest_device_sync", event.safeSummary);
     }
 
-    if (["support_requested", "teacher_help_requested", "low_confidence_signal", "frustration_signal", "wellbeing_check_in", "wellbeing_signal_received", "attendance_absent", "attendance_late", "assignment_overdue"].includes(event.type)) {
+    if (["support_requested", "teacher_help_requested", "low_confidence_signal", "frustration_signal", "wellbeing_check_in", "wellbeing_signal_received", "learning_decline_signal", "health_signal_received", "social_integration_signal", "urgent_safety_signal", "attendance_absent", "attendance_late", "assignment_overdue"].includes(event.type)) {
       await this.prisma.hiddenSignal.create({
         data: {
           studentId: event.studentId,

@@ -29,7 +29,7 @@ export default function VoiceCommandPanel({ currentScreen, currentLessonTitle, c
 
   const start = async () => {
     setDetected(null);
-    await voiceCommandController.startListening();
+    await voiceCommandController.startListening({ currentScreen, currentLessonTitle, currentPageNumber });
   };
 
   const stop = async () => {
@@ -37,16 +37,20 @@ export default function VoiceCommandPanel({ currentScreen, currentLessonTitle, c
   };
 
   const statusPill = snapshot.state === 'processing'
-    ? snapshot.engine === 'gemma_audio' ? 'Processing with local AI' : 'Processing with Whisper'
-    : snapshot.state === 'hearing_speech'
-      ? 'Hearing speech'
-      : snapshot.state === 'listening'
-        ? 'Listening'
-        : snapshot.state === 'ready'
-          ? 'Ready'
-          : snapshot.state === 'error'
-            ? 'Error'
-            : 'Idle';
+    ? snapshot.engine === 'cloud_audio' ? 'Processing with cloud AI' : 'Processing with local AI'
+    : snapshot.state === 'transcribing'
+      ? snapshot.engine === 'whisper_transcription' ? 'Listening with Whisper' : 'Understanding audio'
+      : snapshot.state === 'routing'
+        ? 'Choosing action'
+        : snapshot.state === 'hearing_speech'
+          ? 'Hearing speech'
+          : snapshot.state === 'listening'
+            ? 'Listening'
+            : snapshot.state === 'ready'
+              ? 'Ready'
+              : snapshot.state === 'error'
+                ? 'Error'
+                : 'Idle';
 
   return (
     <View style={styles.card}>
@@ -59,6 +63,10 @@ export default function VoiceCommandPanel({ currentScreen, currentLessonTitle, c
 
       {snapshot.engine === 'whisper_transcription' && snapshot.engineStatus !== 'ready' ? (
         <Text style={styles.warn}>Whisper model is not downloaded.</Text>
+      ) : null}
+
+      {snapshot.engine === 'cloud_audio' && snapshot.engineStatus !== 'ready' ? (
+        <Text style={styles.warn}>Cloud audio understanding is not configured in this build.</Text>
       ) : null}
 
       <View style={styles.row}>
