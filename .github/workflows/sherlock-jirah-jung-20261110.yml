@@ -1,0 +1,51 @@
+name: Sherlock public username smoke test
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/sherlock-jirah-jung-20261110.yml
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    if: github.head_ref == 'experiment/sherlock-jirah-jung-20261110'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Clone official Sherlock repository
+        run: |
+          git clone --depth 1 https://github.com/sherlock-project/sherlock.git sherlock-upstream
+          git -C sherlock-upstream log -1 --format="Upstream commit: %H"
+
+      - name: Install Sherlock from its source
+        run: |
+          python -m pip install --no-input ./sherlock-upstream
+          sherlock --version
+
+      - name: Search public username variants
+        shell: bash
+        run: |
+          mkdir -p results
+          set -o pipefail
+          sherlock "jirah jung" "jirahjung" "jirah_jung" "jirah-jung" --timeout 12 --print-found --no-color --txt --folderoutput results 2>&1 | tee sherlock-scan.log
+          echo "====== Result files ======"
+          find results -maxdepth 1 -type f -print -exec cat {} \;
+
+      - name: Preserve scan output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sherlock-jirah-jung-results
+          path: |
+            sherlock-scan.log
+            results/
+          if-no-files-found: warn
+          retention-days: 2
